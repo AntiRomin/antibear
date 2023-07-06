@@ -353,7 +353,6 @@ antibear:
 
 ## clean             : clean up temporary / machine-generated files
 clean:
-	@echo "$(CFLAGS)"
 	@echo "Cleaning $(TARGET_NAME)"
 	$(V0) rm -f $(CLEAN_ARTIFACTS)
 	$(V0) rm -rf $(TARGET_OBJ_DIR)
