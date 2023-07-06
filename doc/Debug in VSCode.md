@@ -53,11 +53,6 @@ We should change the intelliSensMode to "windows-gcc-arm" for arm style C langua
 ```
 {
     "version": "2.0.0",
-    "env": {
-        "openocdInterfaceCfgPath": ["openocd interface path"],
-        "openocdTargetCfgPath": ["openocd target path"],
-        "elfPath": ["your elfPath"]
-    },
     "tasks": [
         {
             "label": "clean",
@@ -97,11 +92,11 @@ We should change the intelliSensMode to "windows-gcc-arm" for arm style C langua
             "command": "openocd",
             "args": [
                 "-f",
-                "${openocdInterfaceCfgPath}",
+                "interface/stlink.cfg",
                 "-f",
-                "${openocdTargetCfgPath}",
+                "target/stm32h7x.cfg",
                 "-c",
-                "program ${elfPath} verify reset exit"
+                "program ./obj/debug/debug.elf verify reset exit"
             ],
             "problemMatcher": "$gcc"
         },
@@ -122,22 +117,17 @@ We should change the intelliSensMode to "windows-gcc-arm" for arm style C langua
 ```
 {
     "version": "0.2.0",
-    "env": {
-        "openocdInterfaceCfgPath": ["openocd interface path"],
-        "openocdTargetCfgPath": ["openocd target path"],
-        "elfPath": ["your elfPath"]
-    },
     "configurations": [
         {
             "name": "Debug with OpenOCD",
             "type": "cortex-debug",
             "request": "launch",
-            "executable": "${elfPath}",
+            "executable": "./obj/debug/debug.elf",
             "cwd": "${workspaceRoot}",
             "servertype": "openocd",
             "configFiles": [
-                "${openocdInterfaceCfgPath}",
-                "${openocdTargetCfgPath}"
+                "interface/stlink.cfg",
+                "target/stm32h7x.cfg"
             ],
             "runToEntryPoint": "SystemInit",
             "showDevDebugOutput": "none",
