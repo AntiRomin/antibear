@@ -21,9 +21,10 @@ ENTRY(Reset_Handler)
 /*
 0x00000000 to 0x0000FFFF   64K ITCM
 0x20000000 to 0x2001FFFF  128K DTCM
-0x24000000 to 0x2405FFFF  384K AXI SRAM, D1 domain, main RAM
-0x30000000 to 0x30007FFF   32K SRAM1, D2 domain
-0x30020000 to 0x30003FFF   16K SRAM2, D2 domain
+0x24000000 to 0x2407FFFF  512K AXI SRAM, D1 domain, main RAM
+0x30000000 to 0x3001FFFF  128K SRAM1, D2 domain
+0x30020000 to 0x3003FFFF  128K SRAM2, D2 domain
+0x30040000 to 0x30047FFF   32K SRAM3, D2 domain
 0x38000000 to 0x3800FFFF   64K SRAM4, D3 domain
 0x38800000 to 0x38800FFF    4K BACKUP SRAM, Backup domain
 
@@ -36,23 +37,20 @@ MEMORY
 {
     FLASH (rx)        : ORIGIN = 0x08000000, LENGTH = 2048K
 
-    ITCM_RAM (rwx)    : ORIGIN = 0x00000000, LENGTH = 64K
-    DTCM_RAM (rwx)    : ORIGIN = 0x20000000, LENGTH = 128K
-    RAM (rwx)         : ORIGIN = 0x24000000, LENGTH = 384K
+    ITCM_RAM (xrw)    : ORIGIN = 0x00000000, LENGTH = 64K
+    DTCM_RAM (xrw)    : ORIGIN = 0x20000000, LENGTH = 128K
+    RAM (xrw)         : ORIGIN = 0x24000000, LENGTH = 512K
 
-    D2_RAM1 (rwx)     : ORIGIN = 0x30000000, LENGTH = 32K
-    D2_RAM2 (rwx)     : ORIGIN = 0x30020000, LENGTH = 16K
+    RAM_D2 (xrw)      : ORIGIN = 0x30000000, LENGTH = 288K
 
-    D3_RAM (rwx)      : ORIGIN = 0x38000000, LENGTH = 64K
-
-    BACKUP_RAM (rwx)  : ORIGIN = 0x38800000, LENGTH = 4K
+    RAM_D3 (xrw)      : ORIGIN = 0x38000000, LENGTH = 64K
 }
 
 REGION_ALIAS("STACKRAM", DTCM_RAM)
 REGION_ALIAS("FASTRAM", DTCM_RAM)
 
 /* Highest address of the user mode stack */
-_estack = ORIGIN(STACKRAM) + LENGTH(STACKRAM) - 8; /* Reserve 2 x 4bytes for info across reset */
+_estack = ORIGIN(STACKRAM) + LENGTH(STACKRAM); /* end of RAM */
 
 /* Generate a link error if heap and stack don't fit into RAM */
 _Min_Heap_Size = 0;      /* required amount of heap  */
@@ -64,8 +62,7 @@ SECTIONS
   /* The startup code goes first into FLASH */
   .isr_vector :
   {
-    . = ALIGN(512);
-    PROVIDE (isr_vector_table_base = .);
+    . = ALIGN(4);
     KEEP(*(.isr_vector)) /* Startup code */
     . = ALIGN(4);
   } >FLASH
@@ -97,7 +94,8 @@ SECTIONS
   .ARM :
   {
     __exidx_start = .;
-    *(.ARM.exidx*) __exidx_end = .;
+    *(.ARM.exidx*)
+    __exidx_end = .;
   } >FLASH
 
   /* used by the startup to initialize data */
@@ -132,7 +130,7 @@ SECTIONS
   } >RAM
 
   /* User_heap_stack section, used to check that there is enough RAM left */
-  _heap_stack_end = ORIGIN(STACKRAM) + LENGTH(STACKRAM) - 8; /* 8 bytes to allow for alignment */
+  _heap_stack_end = ORIGIN(STACKRAM) + LENGTH(STACKRAM);
   _heap_stack_begin = _heap_stack_end - _Min_Stack_Size  - _Min_Heap_Size;
   . = _heap_stack_begin;
   ._user_heap_stack :
@@ -143,7 +141,7 @@ SECTIONS
     . = . + _Min_Heap_Size;
     . = . + _Min_Stack_Size;
     . = ALIGN(4);
-  } >STACKRAM = 0xa5
+  } >STACKRAM
 
   /* Remove information from the standard libraries */
   /DISCARD/ :
