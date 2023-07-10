@@ -10,6 +10,9 @@ Antibear is an arm-cortex M7 core MCU learning project. It used STM32H743XI as M
 | - | - |
 | 04-07-2023 | Init the repo |
 
+## Plan
+1. Initialize SDRAM at systemInit
+
 ## Goal
 1. Learning makefile and arm gcc compiler
 2. Learning arm-cortex M7 core resource
