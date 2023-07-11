@@ -90,6 +90,19 @@ LoopFillZerobss:
   cmp  r2, r4
   bcc  FillZerobss
 
+  ldr  r2, =_sfastram_bss
+  ldr  r4, =_efastram_bss
+  movs  r3, #0
+  b  LoopFillZerofastram_bss
+
+FillZerofastram_bss:
+  str   r3, [r2]
+  adds  r2, r2, #4
+
+LoopFillZerofastram_bss:
+  cmp  r2, r4
+  bcc  FillZerofastram_bss
+
 /* Call the clock system initialization function.*/
   bl  SystemInit
 

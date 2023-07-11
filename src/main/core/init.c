@@ -13,4 +13,6 @@
 void init(void)
 {
     systemInit();
+
+    // TODO: Setup Debug serial
 }

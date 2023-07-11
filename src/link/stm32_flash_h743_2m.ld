@@ -28,6 +28,8 @@ ENTRY(Reset_Handler)
 0x38000000 to 0x3800FFFF   64K SRAM4, D3 domain
 0x38800000 to 0x38800FFF    4K BACKUP SRAM, Backup domain
 
+0xD0000000 to 0xD3FFFFFF   64M SDRAM_B2, FMC SDRAM BANK2
+
 0x08000000 to 0x081FFFFF 2048K full flash,
 0x08000000 to 0x081FFFFF 2048K isr vector, startup code, config, firmware
 */
@@ -44,6 +46,10 @@ MEMORY
     RAM_D2 (xrw)      : ORIGIN = 0x30000000, LENGTH = 288K
 
     RAM_D3 (xrw)      : ORIGIN = 0x38000000, LENGTH = 64K
+
+    RAM_BACKUP (xrw)  : ORIGIN = 0x38800000, LENGTH = 4K
+
+    SDRAM_B2 (xrw)    : ORIGIN = 0xD0000000, LENGTH = 64M
 }
 
 REGION_ALIAS("STACKRAM", DTCM_RAM)
@@ -85,6 +91,19 @@ SECTIONS
     . = ALIGN(4);
     _etext = .;        /* define a global symbols at end of code */
   } >FLASH
+
+  /* Critical program code goes into ITCM RAM */
+  /* Copy specific fast-executing code to ITCM RAM */
+  tcm_code = LOADADDR(.tcm_code);
+  .tcm_code :
+  {
+    . = ALIGN(4);
+    tcm_code_start = .;
+    *(.tcm_code)
+    *(.tcm_code*)
+    . = ALIGN(4);
+    tcm_code_end = .;
+  } >ITCM_RAM AT >FLASH
 
   .ARM.extab   :
   {
@@ -128,6 +147,123 @@ SECTIONS
     _ebss = .;         /* define a global symbol at bss end */
     __bss_end__ = _ebss;
   } >RAM
+
+  /* used during startup to initialized fastram_data */
+  _sfastram_idata = LOADADDR(.fastram_data);
+
+  /* Initialized FAST_DATA section for unsuspecting developers */
+  .fastram_data :
+  {
+    . = ALIGN(4);
+    _sfastram_data = .;        /* create a global symbol at data start */
+    *(.fastram_data)           /* .data sections */
+    *(.fastram_data*)          /* .data* sections */
+
+    . = ALIGN(4);
+    _efastram_data = .;        /* define a global symbol at data end */
+  } >FASTRAM AT >FLASH
+
+  . = ALIGN(4);
+  .fastram_bss (NOLOAD) :
+  {
+    _sfastram_bss = .;
+    __fastram_bss_start__ = _sfastram_bss;
+    *(.fastram_bss)
+    *(SORT_BY_ALIGNMENT(.fastram_bss*))
+
+    . = ALIGN(4);
+    _efastram_bss = .;
+    __fastram_bss_end__ = _efastram_bss;
+  } >FASTRAM
+
+  /* used during startup to initialized dmaram_data */
+  _sdmaram_idata = LOADADDR(.dmaram_data);
+
+  . = ALIGN(32);
+  .dmaram_data :
+  {
+    PROVIDE(dmaram_start = .);
+    _sdmaram = .;
+    _dmaram_start__ = _sdmaram;
+    _sdmaram_data = .;        /* create a global symbol at data start */
+    *(.dmaram_data)           /* .data sections */
+    *(.dmaram_data*)          /* .data* sections */
+    . = ALIGN(32);
+    _edmaram_data = .;        /* define a global symbol at data end */
+  } >RAM AT >FLASH
+
+  . = ALIGN(32);
+  .dmaram_bss (NOLOAD) :
+  {
+    _sdmaram_bss = .;
+    __dmaram_bss_start__ = _sdmaram_bss;
+    *(.dmaram_bss)
+    *(SORT_BY_ALIGNMENT(.dmaram_bss*))
+    . = ALIGN(32);
+    _edmaram_bss = .;
+    __dmaram_bss_end__ = _edmaram_bss;
+  } >RAM
+
+  . = ALIGN(32);
+  .DMA_RAM (NOLOAD) :
+  {
+    KEEP(*(.DMA_RAM))
+    PROVIDE(dmaram_end = .);
+    _edmaram = .;
+    _dmaram_end__ = _edmaram;
+  } >RAM
+
+  .DMA_RW_AXI (NOLOAD) :
+  {
+    . = ALIGN(32);
+    PROVIDE(dmarwaxi_start = .);
+    _sdmarwaxi = .;
+    _dmarwaxi_start__ = _sdmarwaxi;
+    KEEP(*(.DMA_RW_AXI))
+    PROVIDE(dmarwaxi_end = .);
+    _edmarwaxi = .;
+    _dmarwaxi_end__ = _edmarwaxi;
+  } >RAM
+
+  /* used during startup to initialized sdram2_data */
+  _ssdram2_idata = LOADADDR(.sdram2_data);
+
+  /* Initialized FAST_DATA section for unsuspecting developers */
+  .sdram2_data :
+  {
+    . = ALIGN(4);
+    _ssdram2_data = .;        /* create a global symbol at data start */
+    *(.sdram2_data)           /* .data sections */
+    *(.sdram2_data*)          /* .data* sections */
+
+    . = ALIGN(4);
+    _esdram2_data = .;        /* define a global symbol at data end */
+  } >SDRAM_B2 AT >FLASH
+
+  . = ALIGN(4);
+  .sdram2_bss (NOLOAD) :
+  {
+    _ssdram2_bss = .;
+    __sdram2_bss_start__ = _ssdram2_bss;
+    *(.sdram2_bss)
+    *(SORT_BY_ALIGNMENT(.sdram2_bss*))
+
+    . = ALIGN(4);
+    _esdram2_bss = .;
+    __sdram2_bss_end__ = _esdram2_bss;
+  } >SDRAM_B2
+
+  .DMA_VRAM (NOLOAD) :
+  {
+    . = ALIGN(32);
+    PROVIDE(dmavran_start = .);
+    _sdmavram = .;
+    _dmavram_start__ = _sdmavram;
+    KEEP(*(.DMA_VRAM))
+    PROVIDE(dmavram_end = .);
+    _edmavram = .;
+    _dmavram_end__ = _edmavram;
+  }
 
   /* User_heap_stack section, used to check that there is enough RAM left */
   _heap_stack_end = ORIGIN(STACKRAM) + LENGTH(STACKRAM);

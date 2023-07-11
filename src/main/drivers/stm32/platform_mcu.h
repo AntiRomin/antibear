@@ -1,6 +1,5 @@
 #pragma once
 
-#if defined(STM32H743xx)
 #include "stm32h7xx.h"
 #include "stm32h7xx_hal.h"
 #include "system_stm32h7xx.h"
@@ -10,10 +9,11 @@
 #define U_ID_1 (*(uint32_t*)(UID_BASE + 4))
 #define U_ID_2 (*(uint32_t*)(UID_BASE + 8))
 
-#define USE_PIN_AF
+#define FAST_IRQ_HANDLER            FAST_CODE
 
-#ifndef STM32H7
-#define STM32H7
-#endif
+#define DMA_DATA_ZERO_INIT          __attribute__ ((section(".dmaram_bss"), aligned(32)))
+#define DMA_DATA                    __attribute__ ((section(".dmaram_data"), aligned(32)))
+#define STATIC_DMA_DATA_AUTO        static DMA_DATA
 
-#endif
+#define DMA_RAM                     __attribute__((section(".DMA_RAM"), aligned(32)))
+#define DMA_RW_AXI                  __attribute__((section(".DMA_RW_AXI"), aligned(32)))

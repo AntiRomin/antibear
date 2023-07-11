@@ -4,3 +4,4 @@
 #include "platform_mcu.h"
 
 #include "target.h"
+#include "target/common_post.h"
