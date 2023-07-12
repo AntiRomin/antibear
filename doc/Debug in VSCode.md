@@ -36,10 +36,20 @@ We should change the intelliSensMode to "windows-gcc-arm" for arm style C langua
             "includePath": [
                 "${gnuArmIncludePath}",
                 "${workspaceFolder}",
-                "/another/path"
+                "./lib/main/CMSIS/Core/Include",
+                "./lib/main/CMSIS/DSP/Include",
+                "./lib/main/STM32H7/Drivers/CMSIS/Device/ST/STM32H7xx/Include",
+                "./lib/main/STM32H7/Drivers/STM32H7xx_HAL_Driver/Inc",
+                "./lib/main/STM32H7/Middlewares/ST/STM32_USB_Device_Library/Core/Inc",
+                "./lib/main/STM32H7/Middlewares/ST/STM32_USB_Host_Library/Core/Inc",
+                "./src/main",
+                "./src/main/target",
+                "./src/main/startup",
+                "./src/main/drivers/stm32"
             ],
             "defines": [
-                "DEBUG"
+                "DEBUG",
+                "STM32H743xx"
             ],
             "compilerPath": "${gnuArmCompilerPath}"
         }
@@ -62,13 +72,6 @@ We should change the intelliSensMode to "windows-gcc-arm" for arm style C langua
             "problemMatcher": "$gcc"
         },
         {
-            "label": "clean all",
-            "type": "shell",
-            "detail": "Clean all target",
-            "command": "make clean_all",
-            "problemMatcher": "$gcc"
-        },
-        {
             "label": "make release",
             "type": "shell",
             "detail": "Build the target",
@@ -86,6 +89,21 @@ We should change the intelliSensMode to "windows-gcc-arm" for arm style C langua
             "problemMatcher": "$gcc"
         },
         {
+            "label": "erase",
+            "type": "shell",
+            "detail": "erase full flash",
+            "command": "openocd",
+            "args": [
+                "-f",
+                "interface/stlink.cfg",
+                "-f",
+                "target/stm32h7x_dual_bank.cfg",
+                "-c",
+                "flash init; init; reset halt; flash erase_sector 0 0 last; flash erase_sector 1 0 last; exit"
+            ],
+            "problemMatcher": "$gcc"
+        },
+        {
             "label": "download with openocd connect",
             "type": "shell",
             "detail": "download elf to mcu",
@@ -94,7 +112,7 @@ We should change the intelliSensMode to "windows-gcc-arm" for arm style C langua
                 "-f",
                 "interface/stlink.cfg",
                 "-f",
-                "target/stm32h7x.cfg",
+                "target/stm32h7x_dual_bank.cfg",
                 "-c",
                 "program ./obj/debug/debug.elf verify reset exit"
             ],
