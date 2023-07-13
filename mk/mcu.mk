@@ -55,7 +55,6 @@ EXCLUDES        = \
                 stm32h7xx_hal_ltdc.c \
                 stm32h7xx_hal_ltdc_ex.c \
                 stm32h7xx_hal_mdios.c \
-                stm32h7xx_hal_mdma.c \
                 stm32h7xx_hal_mmc.c \
                 stm32h7xx_hal_mmc_ex.c \
                 stm32h7xx_hal_msp_template.c \
@@ -68,7 +67,6 @@ EXCLUDES        = \
                 stm32h7xx_hal_pcd.c \
                 stm32h7xx_hal_pcd_ex.c \
                 stm32h7xx_hal_pssi.c \
-                stm32h7xx_hal_qspi.c \
                 stm32h7xx_hal_ramecc.c \
                 stm32h7xx_hal_rng.c \
                 stm32h7xx_hal_rng_ex.c \
@@ -177,6 +175,7 @@ endif
 DEVICE_FLAGS    += -DHSE_VALUE=$(HSE_VALUE) -DHSE_STARTUP_TIMEOUT=1000 -DSTM32
 
 MCU_COMMON_SRC = \
+            drivers/stm32/bus_quadspi.c \
             drivers/stm32/system_stm32h7xx.c \
             startup/system_stm32h7xx.c
 

@@ -6,6 +6,9 @@ COMMON_SRC = \
             drivers/system.c \
             core/init.c
 
+FLASH_SRC += \
+            drivers/flash_w25q256jv.c \
+
 COMMON_DEVICE_SRC = \
             $(CMSIS_SRC) \
             $(DEVICE_STDPERIPH_SRC)
@@ -37,7 +40,7 @@ SRC += $(wildcard $(DSP_LIB)/Source/*/*.S)
 
 endif
 
-SRC += $(COMMON_SRC)
+SRC += $(FLASH_SRC) $(COMMON_SRC)
 
 #excludes
 SRC   := $(filter-out $(MCU_EXCLUDES), $(SRC))

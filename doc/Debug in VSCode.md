@@ -123,7 +123,6 @@ We should change the intelliSensMode to "windows-gcc-arm" for arm style C langua
             "type": "shell",
             "dependsOn": [
                 "make debug",
-                "download with openocd connect"
             ],
             "problemMatcher": "$gcc"
         }

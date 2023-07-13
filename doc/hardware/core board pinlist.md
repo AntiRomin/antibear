@@ -132,7 +132,7 @@ NAND FLASH Unused:
 | PE8 | M | AF FMC | NAND_FMC_D5 |
 | PE9 | M | AF FMC | NAND_FMC_D6 |
 | PE10 | M | AF FMC | NAND_FMC_D7 |
-| PG9 | M | AF FMC | QSPI_BK2_IO2 |
+| PG9 | M | AF FMC | NAND_FMC_NCE |
 
 LCD Unused:
 | PD13 | Y | Output | LCD_BL |
