@@ -5,17 +5,17 @@ Key:
 | PA0 | Y | Input | Key1 / Wake Up Key |
 | PC13 | Y | Input | Key2 |
 
-Debug port:
-| Pin | Used | Mode | Detail |
-| - | - | - | - |
-| PA13 | Y | DEBUG | TMG |
-| PA14 | Y | DEBUG | TCK |
-
 Debug Serial:
 | Pin | Used | Mode | Detail |
 | - | - | - | - |
 | PA9 | Y | AF UART | UART1_TX |
 | PA10 | Y | AF UART | UART1_RX |
+
+USB:
+| Pin | Used | Mode | Detail |
+| - | - | - | - |
+| PB14 | Y | AF USB_OTG | USB_OTG_HS_DM |
+| PB15 | Y | AF USB_OTG | USB_OTG_HS_DP |
 
 QSPI_FLASH:
 | Pin | Used | Mode | Detail |
@@ -30,18 +30,6 @@ QSPI_FLASH:
 | PG14 | Y | AF QUADSPI | QSPI_BK2_IO3 |
 | PH2 | Y | AF QUADSPI | QSPI_BK2_IO0 |
 | PH3 | Y | AF QUADSPI | QSPI_BK2_IO1 |
-
-I2C_EEPROM:
-| Pin | Used | Mode | Detail |
-| - | - | - | - |
-| PB8 | Y | AF I2C | EEPROM_SCL |
-| PB9 | Y | AF I2C | EEPROM_SDA |
-
-USB:
-| Pin | Used | Mode | Detail |
-| - | - | - | - |
-| PB14 | Y | AF USB_OTG | USB_OTG_HS_DM |
-| PB15 | Y | AF USB_OTG | USB_OTG_HS_DP |
 
 SDRAM:
 | Pin | Used | Mode | Detail |
@@ -104,6 +92,12 @@ SDRAM:
 | PI9 | Y | AF FMC | SDRAM_FMC_D30 |
 | PI10 | Y | AF FMC | SDRAM_FMC_D31 |
 
+Debug port:
+| Pin | Used | Mode | Detail |
+| - | - | - | - |
+| PA13 | Y | DEBUG | TMG |
+| PA14 | Y | DEBUG | TCK |
+
 OSC:
 | Pin | Used | Mode | Detail |
 | - | - | - | - |
@@ -115,6 +109,12 @@ OSC32:
 | - | - | - | - |
 | PC14 | Y | OSC32 | OSC32_IN |
 | PC15 | Y | OSC32 | OSC32_OUT |
+
+I2C_EEPROM Unused:
+| Pin | Used | Mode | Detail |
+| - | - | - | - |
+| PB8 | Y | AF I2C | EEPROM_SCL |
+| PB9 | Y | AF I2C | EEPROM_SDA |
 
 NAND FLASH Unused:
 | Pin | Used | Mode | Detail |
