@@ -106,6 +106,18 @@ static uint32_t quadSpi_addressSizeFromValue(uint8_t addressSize)
     return quadSpi_addressSizeMap[((addressSize + 1) / 8) - 1]; // rounds to nearest QSPI_ADDRESS_* value that will hold the address.
 }
 
+static const uint32_t quadSpi_alternateSizeMap[] = {
+    QSPI_ALTERNATE_BYTES_8_BITS,
+    QSPI_ALTERNATE_BYTES_16_BITS,
+    QSPI_ALTERNATE_BYTES_24_BITS,
+    QSPI_ALTERNATE_BYTES_32_BITS
+};
+
+static uint32_t quadSpi_alternateSizeFromValue(uint8_t alternateSize)
+{
+    return quadSpi_alternateSizeMap[((alternateSize + 1) / 8) - 1]; // rounds to nearest QSPI_ADDRESS_* value that will hold the address.
+}
+
 bool quadSpiTransmit1LINE(uint8_t instruction, uint8_t dummyCycles, const uint8_t *out, int length)
 {
     HAL_StatusTypeDef status;
@@ -265,6 +277,102 @@ bool quadSpiReceiveWith4LINESAddress4LINES(uint8_t instruction, uint8_t dummyCyc
     bool timeout = (status != HAL_OK);
     if (!timeout) {
         status = HAL_QSPI_Receive(&hqspi, in, QUADSPI_DEFAULT_TIMEOUT);
+        timeout = (status != HAL_OK);
+    }
+
+    if (timeout) {
+        return false;
+    }
+
+    return true;
+}
+
+bool quadSpiReceiveWith4LINESAddressAndAlternate4LINES(uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, uint32_t alternate, uint8_t alternateSize, uint8_t *in, int length)
+{
+    HAL_StatusTypeDef status;
+
+    QSPI_CommandTypeDef cmd;
+    cmd.InstructionMode    = QSPI_INSTRUCTION_1_LINE;
+    cmd.AddressMode        = QSPI_ADDRESS_4_LINES;
+    cmd.AlternateByteMode  = QSPI_ALTERNATE_BYTES_4_LINES;
+    cmd.DataMode           = QSPI_DATA_4_LINES;
+    cmd.DummyCycles        = dummyCycles;
+    cmd.DdrMode            = QSPI_DDR_MODE_DISABLE;
+    cmd.DdrHoldHalfCycle   = QSPI_DDR_HHC_ANALOG_DELAY;
+    cmd.SIOOMode           = QSPI_SIOO_INST_EVERY_CMD;
+
+    cmd.Instruction        = instruction;
+    cmd.Address            = address;
+    cmd.AddressSize        = quadSpi_addressSizeFromValue(addressSize);
+    cmd.AlternateBytes     = alternate;
+    cmd.AlternateBytesSize = quadSpi_alternateSizeFromValue(alternateSize);
+    cmd.NbData             = length;
+
+    status = HAL_QSPI_Command(&hqspi, &cmd, QUADSPI_DEFAULT_TIMEOUT);
+    bool timeout = (status != HAL_OK);
+    if (!timeout) {
+        status = HAL_QSPI_Receive(&hqspi, in, QUADSPI_DEFAULT_TIMEOUT);
+        timeout = (status != HAL_OK);
+    }
+
+    if (timeout) {
+        return false;
+    }
+
+    return true;
+}
+
+bool quadSpiInstructionWithAddress1LINE(uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize)
+{
+    HAL_StatusTypeDef status;
+
+    QSPI_CommandTypeDef cmd;
+    cmd.InstructionMode   = QSPI_INSTRUCTION_1_LINE;
+    cmd.AddressMode       = QSPI_ADDRESS_1_LINE;
+    cmd.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE;
+    cmd.DataMode          = QSPI_DATA_NONE;
+    cmd.DummyCycles       = dummyCycles;
+    cmd.DdrMode           = QSPI_DDR_MODE_DISABLE;
+    cmd.DdrHoldHalfCycle  = QSPI_DDR_HHC_ANALOG_DELAY;
+    cmd.SIOOMode          = QSPI_SIOO_INST_EVERY_CMD;
+
+    cmd.Instruction       = instruction;
+    cmd.Address           = address;
+    cmd.AddressSize       = quadSpi_addressSizeFromValue(addressSize);
+    cmd.NbData            = 0;
+
+    status = HAL_QSPI_Command(&hqspi, &cmd, QUADSPI_DEFAULT_TIMEOUT);
+    bool timeout = (status != HAL_OK);
+
+    if (timeout) {
+        return false;
+    }
+
+    return true;
+}
+
+bool quadSpiInstructionWithData1LINE(uint8_t instruction, uint8_t dummyCycles, const uint8_t *out, int length)
+{
+    HAL_StatusTypeDef status;
+
+    QSPI_CommandTypeDef cmd;
+    cmd.InstructionMode   = QSPI_INSTRUCTION_1_LINE;
+    cmd.AddressMode       = QSPI_ADDRESS_NONE;
+    cmd.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE;
+    cmd.DataMode          = QSPI_DATA_1_LINE;
+    cmd.DummyCycles       = dummyCycles;
+    cmd.DdrMode           = QSPI_DDR_MODE_DISABLE;
+    cmd.DdrHoldHalfCycle  = QSPI_DDR_HHC_ANALOG_DELAY;
+    cmd.SIOOMode          = QSPI_SIOO_INST_EVERY_CMD;
+
+    cmd.Instruction       = instruction;
+    cmd.NbData            = length;
+
+    status = HAL_QSPI_Command(&hqspi, &cmd, QUADSPI_DEFAULT_TIMEOUT);
+    bool timeout =(status != HAL_OK);
+
+    if (!timeout) {
+        status = HAL_QSPI_Transmit(&hqspi, (uint8_t *)out, QUADSPI_DEFAULT_TIMEOUT);
         timeout = (status != HAL_OK);
     }
 
