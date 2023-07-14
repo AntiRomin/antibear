@@ -28,11 +28,8 @@
 #define W25Q256JV_STATUS_REGISTER_BITS        16
 #define W25Q256JV_JEDEC_ID_LENGTH             48
 #endif
-#if !defined(USE_QSPI_4B_ADDRESS)
-#define W25Q256JV_ADDRESS_BITS                24
-#else
+
 #define W25Q256JV_ADDRESS_BITS                32
-#endif
 
 // Instructions
 #define W25Q256JV_INSTRUCTION_READ_DID              0xAB
@@ -135,11 +132,7 @@ static void w25q256jv_performOneByteCommand(uint8_t command)
 
 static void w25q256jv_performCommandWithAddress(uint8_t command, uint32_t address)
 {
-#if !defined(USE_QSPI_4B_ADDRESS)
-    quadSpiInstructionWithAddress1LINE(command, 0, address & 0xffffff, W25Q256JV_ADDRESS_BITS);
-#else
-    quadSpiInstructionWithAddress1LINE(command, 0, address & 0xffffffff, W25Q256JV_ADDRESS_BITS);
-#endif
+    quadSpiInstructionWithAddress1LINE(command, 0, address, W25Q256JV_ADDRESS_BITS);
 }
 
 static void w25q256jv_writeEnable(void)
@@ -315,34 +308,13 @@ static bool w25q256jv_identify(void)
     return isDetected;
 }
 
-#if !defined(USE_QSPI_4B_ADDRESS)
-static bool w25q256jv_setExAddress(uint8_t address24_31)
-{
-    quadSpiInstructionWithData1LINE(W25Q256JV_INSTRUCTION_WRITE_EX_ADDR_REG, 0, &address24_31, 1);
-    
-    uint8_t exAddrReg;
-    quadSpiReceive1LINE(W25Q256JV_INSTRUCTION_READ_EX_ADDR_REG, 0, &exAddrReg, 1);
-
-    if (exAddrReg == address24_31) {
-        return true;
-    }
-
-    return false;
-}
-#endif
-
 void w25q256jv_eraseSector(uint32_t address)
 {
     w25q256jv_waitForReady();
 
     w25q256jv_writeEnable();
 
-#if !defined(USE_QSPI_4B_ADDRESS)
-    w25q256jv_setExAddress(((uint8_t *)&address)[3]);
-    w25q256jv_performCommandWithAddress(W25Q256JV_INSTRUCTION_BLOCK_ERASE_64KB, address);
-#else
     w25q256jv_performCommandWithAddress(W25Q256JV_INSTRUCTION_BLOCK_ERASE_64KB_4B_ADDR, address);
-#endif
     
     w25q256jv_setTimeout(W25Q256JV_TIMEOUT_BLOCK_ERASE_64KB_MS);
 }
@@ -364,13 +336,7 @@ static int w25q256jv_readBytes(uint32_t address, uint8_t *buffer, uint32_t lengt
         return 0;
     }
 
-#if !defined(USE_QSPI_4B_ADDRESS)
-    w25q256jv_setExAddress(((uint8_t *)&address)[3]);
-    bool status = quadSpiReceiveWithAddress4LINES(W25Q256JV_INSTRUCTION_FAST_READ_QUAD_OUT, 6, address, W25Q256JV_ADDRESS_BITS, buffer, length);
-#else
-    // bool status = quadSpiReceiveWith4LINESAddress4LINES(W25Q256JV_INSTRUCTION_FAST_READ_QUAD_OUT_4B_ADDR, 24, address, W25Q256JV_ADDRESS_BITS, buffer, length);
     bool status = quadSpiReceiveWith4LINESAddressAndAlternate4LINES(W25Q256JV_INSTRUCTION_FAST_READ_QUAD_OUT_4B_ADDR, 24, address, W25Q256JV_ADDRESS_BITS, 0x00000000, 32, buffer, length);
-#endif
 
     w25q256jv_setTimeout(W25Q256JV_TIMEOUT_PAGE_READ_MS);
 
