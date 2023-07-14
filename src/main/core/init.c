@@ -20,5 +20,5 @@ void init(void)
     // TODO: Setup Debug serial
     quadSpiInit();
 
-    flashInit();
+    w25q256jv_init();
 }

@@ -16,8 +16,9 @@
 
 // Device size parameters
 #define W25Q256JV_PAGE_SIZE         2048
-#define W25Q256JV_PAGES_PER_BLOCK   64
-#define W25Q256JV_BLOCKS_PER_DIE    2048
+#define W25Q256JV_PAGE_BYTE_SIZE    256
+#define W25Q256JV_PAGES_PER_BLOCK   256
+#define W25Q256JV_BLOCKS_PER_DIE    512
 #define W25Q256JV_BLOCK_SIZE        (W25Q256JV_PAGES_PER_BLOCK * W25Q256JV_PAGE_SIZE)
 
 // Sizes
@@ -112,6 +113,7 @@
 #define W25Q256JV_TIMEOUT_CHIP_ERASE_MS        (400 * 1000) // tCEmax 400s, tCEtyp = 80s
 
 #define W25Q256JV_TIMEOUT_PAGE_PROGRAM_MS       3           // tPPmax = 3ms, tPPtyp = 0.7ms
+#define W25Q256JV_TIMEOUT_STATUS_REG_WRITE_MS   15          // tPPmax = 15ms, tPPtyp = 10ms
 #define W25Q256JV_TIMEOUT_WRITE_ENABLE_MS       1
 
 uint32_t timeoutAt = 0;
@@ -193,6 +195,9 @@ static void w25q256jv_deviceReset(void)
         w25q256jv_performOneByteCommand(W25Q256JV_INSTRUCTION_WRITE_ENABLE);
         // w25q256jv_performOneByteCommand(W25Q256JV_INSTRUCTION_VOLATILE_WRITE_ENABLE);
         w25q256jv_writeRegister(W25Q256JV_INSTRUCTION_WRITE_STATUS1_REG, newValue);
+
+        w25q256jv_setTimeout(W25Q256JV_TIMEOUT_STATUS_REG_WRITE_MS);
+        w25q256jv_waitForTimeout();
     }
 
     registerValue = w25q256jv_readRegister(W25Q256JV_INSTRUCTION_READ_STATUS2_REG);
@@ -217,6 +222,9 @@ static void w25q256jv_deviceReset(void)
         w25q256jv_performOneByteCommand(W25Q256JV_INSTRUCTION_WRITE_ENABLE);
         // w25q256jv_performOneByteCommand(W25Q256JV_INSTRUCTION_VOLATILE_WRITE_ENABLE);
         w25q256jv_writeRegister(W25Q256JV_INSTRUCTION_WRITE_STATUS2_REG, newValue);
+
+        w25q256jv_setTimeout(W25Q256JV_TIMEOUT_STATUS_REG_WRITE_MS);
+        w25q256jv_waitForTimeout();
     }
 
     registerValue = w25q256jv_readRegister(W25Q256JV_INSTRUCTION_READ_STATUS3_REG);
@@ -241,6 +249,9 @@ static void w25q256jv_deviceReset(void)
         w25q256jv_performOneByteCommand(W25Q256JV_INSTRUCTION_WRITE_ENABLE);
         // w25q256jv_performOneByteCommand(W25Q256JV_INSTRUCTION_VOLATILE_WRITE_ENABLE);
         w25q256jv_writeRegister(W25Q256JV_INSTRUCTION_WRITE_STATUS3_REG, newValue);
+
+        w25q256jv_setTimeout(W25Q256JV_TIMEOUT_STATUS_REG_WRITE_MS);
+        w25q256jv_waitForTimeout();
     }
 }
 
@@ -251,14 +262,28 @@ bool w25q256jv_isReady(void)
 #if !defined(USE_QSPI_DUALFLASH)
     bool busy = (((uint8_t *)&status)[0] & W25Q256JV_SR1_BIT_WRITE_IN_PROGRESS);
 #else
-    bool busy = ((((uint8_t *)&status)[0] & W25Q256JV_SR1_BIT_WRITE_IN_PROGRESS) &&
+    bool busy = ((((uint8_t *)&status)[0] & W25Q256JV_SR1_BIT_WRITE_IN_PROGRESS) ||
                  (((uint8_t *)&status)[1] & (W25Q256JV_SR1_BIT_WRITE_IN_PROGRESS)));
 #endif
 
     return !busy;
 }
 
-bool w25q256jv_hasTimedOut(void)
+static bool w25q256jv_isWritable(void)
+{
+    uint16_t status = w25q256jv_readRegister(W25Q256JV_INSTRUCTION_READ_STATUS1_REG);
+
+#if !defined(USE_QSPI_DUALFLASH)
+    bool writable = (((uint8_t *)&status)[0] & W25Q256JV_SR1_BIT_WRITE_ENABLED);
+#else
+    bool writable = ((((uint8_t *)&status)[0] & W25Q256JV_SR1_BIT_WRITE_ENABLED) &&
+                     (((uint8_t *)&status)[1] & (W25Q256JV_SR1_BIT_WRITE_ENABLED)));
+#endif
+
+    return writable;
+}
+
+static bool w25q256jv_hasTimedOut(void)
 {
     uint32_t nowMs = microsISR() / 1000;
     if (cmp32(nowMs, timeoutAt) >= 0) {
@@ -267,14 +292,14 @@ bool w25q256jv_hasTimedOut(void)
     return false;
 }
 
-void w25q256jv_waitForTimeout(void)
+static void w25q256jv_waitForTimeout(void)
 {
    while (!w25q256jv_hasTimedOut()) { }
 
    timeoutAt = 0;
 }
 
-bool w25q256jv_waitForReady(void)
+static bool w25q256jv_waitForReady(void)
 {
     bool ready = true;
     while (!w25q256jv_isReady()) {
@@ -314,6 +339,19 @@ void w25q256jv_eraseSector(uint32_t address)
 
     w25q256jv_writeEnable();
 
+    // verify write enable is set
+    w25q256jv_setTimeout(W25Q256JV_TIMEOUT_WRITE_ENABLE_MS);
+    bool writable = false;
+    do {
+        writable = w25q256jv_isWritable();
+    } while (!writable && w25q256jv_hasTimedOut());
+
+    if (!writable) {
+        return;
+    }
+
+    w25q256jv_waitForReady();
+
     w25q256jv_performCommandWithAddress(W25Q256JV_INSTRUCTION_BLOCK_ERASE_64KB_4B_ADDR, address);
     
     w25q256jv_setTimeout(W25Q256JV_TIMEOUT_BLOCK_ERASE_64KB_MS);
@@ -325,18 +363,85 @@ void w25q256jv_eraseCompletely(void)
 
     w25q256jv_writeEnable();
 
+    // verify write enable is set
+    w25q256jv_setTimeout(W25Q256JV_TIMEOUT_WRITE_ENABLE_MS);
+    bool writable = false;
+    do {
+        writable = w25q256jv_isWritable();
+    } while (!writable && w25q256jv_hasTimedOut());
+
+    if (!writable) {
+        return;
+    }
+
+    w25q256jv_waitForReady();
+
     w25q256jv_performOneByteCommand(W25Q256JV_INSTRUCTION_CHIP_ERASE);
 
     w25q256jv_setTimeout(W25Q256JV_TIMEOUT_CHIP_ERASE_MS);
 }
 
-static int w25q256jv_readBytes(uint32_t address, uint8_t *buffer, uint32_t length)
+static int w25q256jv_pageProgram(uint32_t address, const uint8_t *data, uint32_t length)
+{
+    w25q256jv_waitForReady();
+
+    w25q256jv_writeEnable();
+
+    // verify write enable is set
+    w25q256jv_setTimeout(W25Q256JV_TIMEOUT_WRITE_ENABLE_MS);
+    bool writable = false;
+    do {
+        writable = w25q256jv_isWritable();
+    } while (!writable && w25q256jv_hasTimedOut());
+
+    if (!writable) {
+        return 0;
+    }
+
+    w25q256jv_waitForReady();
+
+    quadSpiTransmitWithAddress4LINES(W25Q256JV_INSTRUCTION_QUAD_PAGE_PROGRAM_4B_ADDR, 0, address, W25Q256JV_ADDRESS_BITS, data, length);
+
+    w25q256jv_setTimeout(W25Q256JV_TIMEOUT_PAGE_PROGRAM_MS);
+
+    return length;
+}
+
+int w25q256jv_writeBytes(uint32_t address, const uint8_t *data, uint32_t length)
+{
+    uint32_t pageBegin, pageEnd;
+    uint32_t programLength = 0;
+
+    pageBegin = address / W25Q256JV_PAGE_BYTE_SIZE;
+    pageEnd = (address + length) / W25Q256JV_PAGE_BYTE_SIZE;
+
+    if (pageBegin == pageEnd) {
+        programLength = w25q256jv_pageProgram(address, data, length);
+    } else {
+        uint32_t firstPageProgramLength = (((pageBegin + 1) * W25Q256JV_PAGE_BYTE_SIZE) - address);
+        length -= firstPageProgramLength;
+        programLength += w25q256jv_pageProgram(address, data, firstPageProgramLength);
+
+        data += firstPageProgramLength;
+        for (uint32_t page = pageBegin + 1; page <= (pageEnd - 1); page++) {
+            programLength += w25q256jv_pageProgram(page * W25Q256JV_PAGE_BYTE_SIZE, data, W25Q256JV_PAGE_BYTE_SIZE);
+            data += W25Q256JV_PAGE_BYTE_SIZE;
+            length -= W25Q256JV_PAGE_BYTE_SIZE;
+        }
+
+        programLength += w25q256jv_pageProgram(pageEnd * W25Q256JV_PAGE_BYTE_SIZE, data, length);
+    }
+
+    return programLength;
+}
+
+int w25q256jv_readBytes(uint32_t address, uint8_t *buffer, uint32_t length)
 {
     if (!w25q256jv_waitForReady()) {
         return 0;
     }
 
-    bool status = quadSpiReceiveWith4LINESAddressAndAlternate4LINES(W25Q256JV_INSTRUCTION_FAST_READ_QUAD_OUT_4B_ADDR, 24, address, W25Q256JV_ADDRESS_BITS, 0x00000000, 32, buffer, length);
+    bool status = quadSpiReceiveWith4LINESAddressAndAlternate4LINES(W25Q256JV_INSTRUCTION_FAST_READ_QUAD_INOUT_4B_ADDR, 4, address, W25Q256JV_ADDRESS_BITS, 0xFF, 8, buffer, length);
 
     w25q256jv_setTimeout(W25Q256JV_TIMEOUT_PAGE_READ_MS);
 
@@ -347,33 +452,14 @@ static int w25q256jv_readBytes(uint32_t address, uint8_t *buffer, uint32_t lengt
     return length;
 }
 
-void w25q256jv_configure(void)
+static void w25q256jv_configure(void)
 {
     w25q256jv_deviceReset();
 }
 
-uint16_t status1 = 0;
-uint16_t status2 = 0;
-uint16_t status3 = 0;
-uint8_t DID[2];
-uint8_t MDID[4];
-uint8_t MDID2[4];
-uint8_t JEDEC[6];
-uint8_t UID[16];
-uint8_t DataBuffer[512];
-void flashInit(void)
+void w25q256jv_init(void)
 {
     if (w25q256jv_identify()) {
         w25q256jv_configure();
-
-        status1 = w25q256jv_readRegister(0x05);
-        status2 = w25q256jv_readRegister(0x35);
-        status3 = w25q256jv_readRegister(0x15);
-        quadSpiReceiveWithAddress1LINE(W25Q256JV_INSTRUCTION_READ_DID, 0, 0x00000000, W25Q256JV_ADDRESS_BITS, DID, 2);
-        quadSpiReceiveWithAddress1LINE(W25Q256JV_INSTRUCTION_READ_MID_DID, 0, 0x00000000, W25Q256JV_ADDRESS_BITS, MDID, 4);
-        quadSpiReceiveWith4LINESAddress4LINES(W25Q256JV_INSTRUCTION_READ_MID_DID_QUAD_INOUT, 6, 0x00000000, W25Q256JV_ADDRESS_BITS, MDID2, 4);
-        quadSpiReceiveWithAddress1LINE(W25Q256JV_INSTRUCTION_READ_UID, 8, 0x00000000, W25Q256JV_ADDRESS_BITS, UID, 16);
-        w25q256jv_readBytes(0x00000000, DataBuffer, 512);
-        __NOP();
     }
 }
