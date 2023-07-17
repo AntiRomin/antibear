@@ -9,6 +9,14 @@ COMMON_SRC = \
 FLASH_SRC += \
             drivers/flash_w25q256jv.c \
 
+FATFS_SRC += \
+            FatFs/diskio.c \
+            FatFs/diskio_quad_flash.c
+
+INCLUDE_DIRS    := $(INCLUDE_DIRS) \
+                   $(FATFS_DIR)
+VPATH           := $(VPATH):$(FATFS_DIR)
+
 COMMON_DEVICE_SRC = \
             $(CMSIS_SRC) \
             $(DEVICE_STDPERIPH_SRC)
@@ -27,7 +35,7 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             core/init.c
 
 # check if target.mk supplied
-SRC := $(STARTUP_SRC) $(MCU_COMMON_SRC) $(TARGET_SRC)
+SRC := $(STARTUP_SRC) $(MCU_COMMON_SRC)
 
 # Files that should not be optimized, useful for debugging IMPRECISE cpu faults.
 # Specify FULL PATH, e.g. "./lib/STM32H7/Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_ll_sdmmc.c"
@@ -40,7 +48,7 @@ SRC += $(wildcard $(DSP_LIB)/Source/*/*.S)
 
 endif
 
-SRC += $(FLASH_SRC) $(COMMON_SRC)
+SRC += $(FLASH_SRC) $(FATFS_SRC) $(COMMON_SRC)
 
 #excludes
 SRC   := $(filter-out $(MCU_EXCLUDES), $(SRC))

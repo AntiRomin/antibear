@@ -41,7 +41,8 @@ BIN_DIR         := $(ROOT)/obj
 CMSIS_DIR       := $(ROOT)/lib/main/CMSIS
 INCLUDE_DIRS    := $(SRC_DIR) \
                    $(ROOT)/src/main/target \
-                   $(ROOT)/src/main/startup
+                   $(ROOT)/src/main/startup \
+                   $(ROOT)/src/main/FatFS
 LINKER_DIR      := $(ROOT)/src/link
 MAKE_SCRIPT_DIR := $(ROOT)/mk
 DEBUG_DIR		:= $(ROOT)/obj/debug
@@ -53,6 +54,8 @@ include $(MAKE_SCRIPT_DIR)/build_verbosity.mk
 
 # Search path for sources
 VPATH           := $(SRC_DIR):$(SRC_DIR)/startup
+FATFS_DIR        = $(ROOT)/lib/main/FatFS/source
+FATFS_SRC        = $(notdir $(wildcard $(FATFS_DIR)/*.c))
 CSOURCES        := $(shell find $(SRC_DIR) -name '*.c')
 
 VERSION_MAJOR := $(shell grep " VERSION_MAJOR" src/main/build/version.h | awk '{print $$3}' )
@@ -184,7 +187,7 @@ CFLAGS     += $(ARCH_FLAGS) \
               $(addprefix -I,$(INCLUDE_DIRS)) \
               $(DEBUG_FLAGS) \
               -std=gnu17 \
-              -Wall -Wextra -Werror -Wpedantic -Wunsafe-loop-optimizations -Wdouble-promotion \
+              -Wall -Wextra -Wpedantic -Wunsafe-loop-optimizations -Wdouble-promotion \
               $(EXTRA_WARNING_FLAGS) \
               -ffunction-sections \
               -fdata-sections \
@@ -225,6 +228,10 @@ LD_FLAGS     = -lm \
               -Wl,--print-memory-usage \
               -T$(LD_SCRIPT) \
                $(EXTRA_LD_FLAGS)
+endif
+
+ifeq ($(DEBUG),)
+CFLAGS     += -Werror
 endif
 
 ###############################################################################
