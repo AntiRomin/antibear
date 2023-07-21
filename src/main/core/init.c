@@ -18,6 +18,7 @@ void init(void)
     systemInit();
 
     // TODO: Setup Debug serial
+
     quadSpiInit();
 
     w25q256jv_init();

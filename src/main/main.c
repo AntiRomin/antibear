@@ -16,7 +16,7 @@ int main(void)
     return 0;
 }
 
-void run(void)
+void FAST_CODE run(void)
 {
     while (true) {
         __NOP();

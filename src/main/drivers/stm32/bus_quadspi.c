@@ -140,11 +140,10 @@ bool quadSpiTransmit1LINE(uint8_t instruction, uint8_t dummyCycles, const uint8_
     }
 
     status = HAL_QSPI_Command(&hqspi, &cmd, QUADSPI_DEFAULT_TIMEOUT);
-    bool timeout= (status != HAL_OK);
+    bool timeout = (status != HAL_OK);
     if (!timeout) {
         if (out && length > 0) {
             status = HAL_QSPI_Transmit(&hqspi, (uint8_t *)out, QUADSPI_DEFAULT_TIMEOUT);
-
             timeout = (status != HAL_OK);
         }
     }
@@ -174,10 +173,9 @@ bool quadSpiReceive1LINE(uint8_t instruction, uint8_t dummyCycles, uint8_t *in, 
     cmd.NbData            = length;
 
     status = HAL_QSPI_Command(&hqspi, &cmd, QUADSPI_DEFAULT_TIMEOUT);
-    bool timeout= (status != HAL_OK);
+    bool timeout = (status != HAL_OK);
     if (!timeout) {
         status = HAL_QSPI_Receive(&hqspi, (uint8_t *)in, QUADSPI_DEFAULT_TIMEOUT);
-
         timeout = (status != HAL_OK);
     }
 

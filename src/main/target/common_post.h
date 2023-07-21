@@ -13,3 +13,6 @@
 
 #define SDRAM2_DATA_ZERO_INIT       __attribute__ ((section(".sdram2_bss"), aligned(4)))
 #define SDRAM2_DATA                 __attribute__ ((section(".sdram2_data"), aligned(4)))
+
+extern uint8_t __config_start;   // configured via linker script when building binaries.
+extern uint8_t __config_end;

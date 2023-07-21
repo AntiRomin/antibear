@@ -21,6 +21,8 @@ int QUADFLASH_disk_read(BYTE *buff, LBA_t sector, UINT count)
     UNUSED(buff);
     UNUSED(sector);
     UNUSED(count);
+
+    return 0;
 }
 
 int QUADFLASH_disk_write(const BYTE *buff, LBA_t sector, UINT count)
@@ -28,6 +30,8 @@ int QUADFLASH_disk_write(const BYTE *buff, LBA_t sector, UINT count)
     UNUSED(buff);
     UNUSED(sector);
     UNUSED(count);
+
+    return 0;
 }
 
 void QUADFLASH_disk_ioctl(BYTE cmd, void *buff)
