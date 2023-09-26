@@ -28,7 +28,6 @@ EXCLUDES        = \
                 stm32h7xx_hal_dcmi.c \
                 stm32h7xx_hal_dfsdm.c \
                 stm32h7xx_hal_dfsdm_ex.c \
-                stm32h7xx_hal_dma.c \
                 stm32h7xx_hal_dma_ex.c \
                 stm32h7xx_hal_dma2d.c \
                 stm32h7xx_hal_dsi.c \
@@ -91,7 +90,6 @@ EXCLUDES        = \
                 stm32h7xx_hal_timebase_rtc_alarm_template.c \
                 stm32h7xx_hal_timebase_rtc_wakeup_template.c \
                 stm32h7xx_hal_timebase_tim_template.c \
-                stm32h7xx_hal_uart.c \
                 stm32h7xx_hal_uart_ex.c \
                 stm32h7xx_hal_usart.c \
                 stm32h7xx_hal_usart_ex.c \

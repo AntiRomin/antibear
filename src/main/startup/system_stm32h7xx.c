@@ -228,6 +228,38 @@ static void SystemClock_Config (void)
     while(!__HAL_PWR_GET_FLAG(PWR_FLAG_VOSRDY)) {}
 
     SystemClockHSE_Config();
+
+    // Configure peripheral clocks
+
+    RCC_PeriphCLKInitTypeDef RCC_PeriphClkInit;
+
+    // Configure UART peripheral clock sources
+    //
+    // Possible sources:
+    //   D2PCLK1 (pclk1 for APB1 = USART234578)
+    //   D2PCLK2 (pclk2 for APB2 = USART16)
+    //   PLL2 (pll2_q_ck)
+    //   PLL3 (pll3_q_ck)
+    //   HSI (hsi_ck)
+    //   CSI (csi_ck)
+    //   LSE (lse_ck)
+
+    RCC_PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART16 | RCC_PERIPHCLK_USART234578;
+    RCC_PeriphClkInit.Usart16ClockSelection = RCC_USART16CLKSOURCE_D2PCLK2;
+    RCC_PeriphClkInit.Usart234578ClockSelection = RCC_USART234578CLKSOURCE_D2PCLK1;
+    HAL_RCCEx_PeriphCLKConfig(&RCC_PeriphClkInit);
+
+    // Configure QSPI peripheral clock sources
+    //
+    // Possible sources for QSPI:
+    //   D1HCLK (hclk for AHB1)
+    //   PLL1 (pll1_q_ck)
+    //   PLL2 (pll2_r_ck)
+    //   CLKP (per_ck)
+
+    RCC_PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_QSPI;
+    RCC_PeriphClkInit.QspiClockSelection = RCC_QSPICLKSOURCE_D1HCLK;
+    HAL_RCCEx_PeriphCLKConfig(&RCC_PeriphClkInit);
 }
 
 void SystemInit (void)

@@ -9,6 +9,7 @@ Antibear is an arm-cortex M7 core MCU learning project. It used STM32H743XI as M
 | Date  | Event |
 | - | - |
 | 04-07-2023 | Init the repo |
+| 26-09-2023 | Added Debug serial |
 
 ## Plans
 1. Port FatFs

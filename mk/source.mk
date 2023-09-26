@@ -3,6 +3,7 @@ COMMON_SRC = \
             $(TARGET_DIR_SRC) \
             main.c \
             $(addprefix common/,$(notdir $(wildcard $(SRC_DIR)/common/*.c))) \
+            cli/debug.c \
             drivers/system.c \
             core/init.c
 
@@ -24,6 +25,7 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             $(DEVICE_STDPERIPH_SRC) \
 
 SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
+            cli/debug.c \
             core/init.c
 
 # check if target.mk supplied
