@@ -41,7 +41,8 @@ BIN_DIR         := $(ROOT)/obj
 CMSIS_DIR       := $(ROOT)/lib/main/CMSIS
 INCLUDE_DIRS    := $(SRC_DIR) \
                    $(ROOT)/src/main/target \
-                   $(ROOT)/src/main/startup
+                   $(ROOT)/src/main/startup \
+                   $(ROOT)/src/main/FreeRTOS
 LINKER_DIR      := $(ROOT)/src/link
 MAKE_SCRIPT_DIR := $(ROOT)/mk
 DEBUG_DIR		:= $(ROOT)/obj/debug
@@ -81,10 +82,10 @@ ifeq ($(DEBUG),GDB)
 OPTIMISE_DEFAULT      := -Og
 
 LTO_FLAGS             := $(OPTIMISE_DEFAULT)
-DEBUG_FLAGS            = -ggdb3 -gdwarf-5 -DDEBUG
+DEBUG_FLAGS            = -ggdb2 -gdwarf-5 -DDEBUG
 else
 ifeq ($(DEBUG),INFO)
-DEBUG_FLAGS            = -ggdb3
+DEBUG_FLAGS            = -ggdb2
 endif
 OPTIMISATION_BASE     := -flto -fuse-linker-plugin -ffast-math -fmerge-all-constants
 OPTIMISE_DEFAULT      := -O2
@@ -184,7 +185,7 @@ CFLAGS     += $(ARCH_FLAGS) \
               $(addprefix -I,$(INCLUDE_DIRS)) \
               $(DEBUG_FLAGS) \
               -std=gnu17 \
-              -Wall -Wextra -Werror -Wpedantic -Wunsafe-loop-optimizations -Wdouble-promotion \
+              -Wall -Wextra -Wpedantic -Wunsafe-loop-optimizations -Wdouble-promotion \
               $(EXTRA_WARNING_FLAGS) \
               -ffunction-sections \
               -fdata-sections \
@@ -225,6 +226,10 @@ LD_FLAGS     = -lm \
               -Wl,--print-memory-usage \
               -T$(LD_SCRIPT) \
                $(EXTRA_LD_FLAGS)
+endif
+
+ifeq ($(DEBUG),)
+CFLAGS     += -Werror
 endif
 
 ###############################################################################

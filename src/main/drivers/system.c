@@ -17,20 +17,28 @@ void cycleCounterInit(void)
 {
     cpuClockFrequency = HAL_RCC_GetSysClockFreq();
 
+#if !defined(USE_TIMEBASE_TIM)
     usTicks = cpuClockFrequency / 1000000;
+#else
+    usTicks = cpuClockFrequency / 1000000 / (TIM6->PSC + 1);
+#endif
 }
 
 // SysTick
 
 static volatile int sysTickPending = 0;
 
-void SysTick_Handler(void)
+void SystemTick_Handler(void)
 {
     {
         sysTickUptime++;
+#if !defined(USE_TIMEBASE_TIM)
         sysTickValStamp = SysTick->VAL;
-        sysTickPending = 0;
         (void)(SysTick->CTRL);
+#else
+        sysTickValStamp = TIM6->CNT;
+#endif
+        sysTickPending = 0;
     }
     // used by the HAL for some timekeeping and timeouts, should always be 1ms
     HAL_IncTick();
@@ -43,6 +51,7 @@ uint32_t microsISR(void)
     register uint32_t ms, pending, cycle_cnt;
 
     {
+#if !defined(USE_TIMEBASE_TIM)
         cycle_cnt = SysTick->VAL;
 
         if (SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk) {
@@ -57,12 +66,34 @@ uint32_t microsISR(void)
 
             cycle_cnt = SysTick->VAL;
         }
+#else
+        cycle_cnt = TIM6->CNT;
+
+        if (TIM6->SR & TIM_FLAG_UPDATE) {
+            if (TIM6->DIER & TIM_IT_UPDATE) {
+                // Update pending.
+                // Record it for multiple calls within the same rollover period
+                // (Will be cleared when serviced).
+                // Note that multiple rollovers are not considered.
+
+                sysTickPending = 1;
+
+                // Read VAL again to ensure the value is read after the rollover.
+
+                cycle_cnt = TIM6->CNT;
+            }
+        }
+#endif
 
         ms = sysTickUptime;
         pending = sysTickPending;
     }
 
+#if !defined(USE_TIMEBASE_TIM)
     return ((ms + pending) * 1000) + (usTicks * 1000 - cycle_cnt) / usTicks;
+#else
+    return ((ms + pending) * 1000) + cycle_cnt / usTicks;
+#endif
 }
 
 uint32_t micros(void)
@@ -75,12 +106,21 @@ uint32_t micros(void)
         return microsISR();
     }
 
+#if !defined(USE_TIMEBASE_TIM)
     do {
         ms = sysTickUptime;
         cycle_cnt = SysTick->VAL;
     } while (ms != sysTickUptime || cycle_cnt > sysTickValStamp);
 
     return (ms * 1000) + (usTicks * 1000 - cycle_cnt) / usTicks;
+#else
+    do {
+        ms = sysTickUptime;
+        cycle_cnt = TIM6->CNT;
+    } while (ms != sysTickUptime || cycle_cnt < sysTickValStamp);
+
+    return (ms * 1000) + cycle_cnt / usTicks;
+#endif
 }
 
 // Return system uptime in milliseconds (rollover in 49 days)

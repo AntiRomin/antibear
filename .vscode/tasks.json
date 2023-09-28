@@ -1,0 +1,67 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "clean",
+            "type": "shell",
+            "detail": "clean the current target",
+            "command": "make clean",
+            "problemMatcher": "$gcc"
+        },
+        {
+            "label": "make release",
+            "type": "shell",
+            "detail": "Build the target",
+            "command": "make",
+            "problemMatcher": "$gcc"
+        },
+        {
+            "label": "make debug",
+            "type": "shell",
+            "detail": "Build with DEBUG=GDB",
+            "command": "make",
+            "args": [
+                "DEBUG=GDB"
+            ],
+            "problemMatcher": "$gcc"
+        },
+        {
+            "label": "erase",
+            "type": "shell",
+            "detail": "erase full flash",
+            "command": "openocd",
+            "args": [
+                "-f",
+                "interface/stlink.cfg",
+                "-f",
+                "target/stm32h7x_dual_bank.cfg",
+                "-c",
+                "flash init; init; reset halt; flash erase_sector 0 0 last; flash erase_sector 1 0 last; exit"
+            ],
+            "problemMatcher": "$gcc"
+        },
+        {
+            "label": "download with openocd connect",
+            "type": "shell",
+            "detail": "download elf to mcu",
+            "command": "openocd",
+            "args": [
+                "-f",
+                "interface/stlink.cfg",
+                "-f",
+                "target/stm32h7x_dual_bank.cfg",
+                "-c",
+                "program ./obj/debug/debug.elf verify reset exit"
+            ],
+            "problemMatcher": "$gcc"
+        },
+        {
+            "label": "debug with download",
+            "type": "shell",
+            "dependsOn": [
+                "make debug",
+            ],
+            "problemMatcher": "$gcc"
+        }
+    ]
+}

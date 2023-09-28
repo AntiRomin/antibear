@@ -1,0 +1,49 @@
+{
+    "env": {
+        "gnuArmIncludePath": [
+            "E:/software/arm gcc/gcc-arm-none-eabi-10.3-2021.10/lib/gcc/arm-none-eabi/10.3.1/include",
+            "E:/software/arm gcc/gcc-arm-none-eabi-10.3-2021.10/lib/gcc/arm-none-eabi/10.3.1/include-fixed"
+        ],
+        "gnuArmCompilerPath": [
+            "E:/software/arm gcc/gcc-arm-none-eabi-10.3-2021.10/bin/arm-none-eabi-gcc.exe"
+        ]
+    },
+    "configurations": [
+        {
+            "name": "GNU Arm",
+            "intelliSenseMode": "gcc-arm",
+            "includePath": [
+                "${gnuArmIncludePath}",
+                "${workspaceFolder}",
+                "${workspaceFolder}/lib/main/CMSIS/Core/Include",
+                "${workspaceFolder}/lib/main/CMSIS/DSP/Include",
+                "${workspaceFolder}/lib/main/STM32H7/Drivers/CMSIS/Device/ST/STM32H7xx/Include",
+                "${workspaceFolder}/lib/main/STM32H7/Drivers/STM32H7xx_HAL_Driver/Inc",
+                "${workspaceFolder}/lib/main/STM32H7/Middlewares/ST/STM32_USB_Device_Library/Core/Inc",
+                "${workspaceFolder}/lib/main/STM32H7/Middlewares/ST/STM32_USB_Host_Library/Core/Inc",
+                "${workspaceFolder}/lib/main/FreeRTOS/Source",
+                "${workspaceFolder}/lib/main/FreeRTOS/Source/include",
+                "${workspaceFolder}/lib/main/FreeRTOS/Source/portable",
+                "${workspaceFolder}/lib/main/FreeRTOS/Source/portable/GCC/ARM_CM7/r0p1",
+                "${workspaceFolder}/lib/main/FreeRTOS/Source/portable/MemMang",
+                "${workspaceFolder}/src/main",
+                "${workspaceFolder}/src/main/build",
+                "${workspaceFolder}/src/main/cli",
+                "${workspaceFolder}/src/main/common",
+                "${workspaceFolder}/src/main/core",
+                "${workspaceFolder}/src/main/FreeRTOS",
+                "${workspaceFolder}/src/main/drivers",
+                "${workspaceFolder}/src/main/drivers/stm32",
+                "${workspaceFolder}/src/main/startup",
+                "${workspaceFolder}/src/main/target"
+            ],
+            "defines": [
+                "DEBUG",
+                "STM32H743xx"
+            ],
+            "compilerPath": "${gnuArmCompilerPath}",
+            "configurationProvider": "ms-vscode.makefile-tools"
+        }
+    ],
+    "version": 4
+}
