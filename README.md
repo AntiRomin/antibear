@@ -10,13 +10,15 @@ Antibear is an arm-cortex M7 core MCU learning project. It used STM32H743XI as M
 | - | - |
 | 04-07-2023 | Init the repo |
 | 26-09-2023 | Added Debug serial |
+| 28-09-2023 | Ported FreeRTOS |
 
 ## Plans
-1. Port FatFs
-2. Use MDMA or DMA for QSPI FLASH Read and Write (Optional)
-3. Write QSPI Read and Write Function (Finished)
-4. Initialize QSPI DUAL FLASH (Finished)
-5. Initialize SDRAM at systemInit (Finished)
+1. Port FreeRTOS (Finished)
+2. Port FatFs
+3. Use MDMA or DMA for QSPI FLASH Read and Write (Optional)
+4. Write QSPI Read and Write Function (Finished)
+5. Initialize QSPI DUAL FLASH (Finished)
+6. Initialize SDRAM at systemInit (Finished)
 
 ## Goal
 1. Learning makefile and arm gcc compiler

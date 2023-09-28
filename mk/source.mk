@@ -21,6 +21,7 @@ FREERTOS_SRC = \
             $(notdir $(wildcard $(ROOT)/lib/main/FreeRTOS/Source/portable/GCC/ARM_CM7/r0p1/*.c)) \
             $(ROOT)/lib/main/FreeRTOS/Source/portable/MemMang/heap_4.c \
             FreeRTOS/FreeRTOSRetarget.c \
+            FreeRTOS/FreeRTOSApp.c
 
 
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \

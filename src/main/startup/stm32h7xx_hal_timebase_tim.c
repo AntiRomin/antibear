@@ -5,7 +5,7 @@
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2020 STMicroelectronics.
+  * Copyright (c) 2023 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -79,7 +79,8 @@ HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
   htim6.Init.Period = (1000000U / 1000U) - 1U;
   htim6.Init.Prescaler = uwPrescalerValue;
   htim6.Init.ClockDivision = 0U;
-  htim6.Init.CounterMode = TIM_COUNTERMODE_DOWN;
+  htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   status = HAL_TIM_Base_Init(&htim6);
   if (status == HAL_OK)
   {
@@ -87,13 +88,14 @@ HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
     status = HAL_TIM_Base_Start_IT(&htim6);
     if (status == HAL_OK)
     {
-	    /* Enable the TIM6 global Interrupt */
+      /* Enable the TIM6 global Interrupt */
       HAL_NVIC_EnableIRQ(TIM6_DAC_IRQn);
-   
+
+      /* Configure the TimeBase IRQ priority */
       if (TickPriority < (1UL << __NVIC_PRIO_BITS))
       {
         /* Enable the TIM6 global Interrupt */
-        HAL_NVIC_SetPriority(TIM6_DAC_IRQn, TickPriority, 0);
+        HAL_NVIC_SetPriority(TIM6_DAC_IRQn, TickPriority, 0U);
         uwTickPrio = TickPriority;
 
         extern void cycleCounterInit(void);

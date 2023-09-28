@@ -89,7 +89,11 @@ uint32_t microsISR(void)
         pending = sysTickPending;
     }
 
+#if !defined(USE_TIMEBASE_TIM)
     return ((ms + pending) * 1000) + (usTicks * 1000 - cycle_cnt) / usTicks;
+#else
+    return ((ms + pending) * 1000) + cycle_cnt / usTicks;
+#endif
 }
 
 uint32_t micros(void)
@@ -102,12 +106,21 @@ uint32_t micros(void)
         return microsISR();
     }
 
+#if !defined(USE_TIMEBASE_TIM)
     do {
         ms = sysTickUptime;
         cycle_cnt = SysTick->VAL;
     } while (ms != sysTickUptime || cycle_cnt > sysTickValStamp);
 
     return (ms * 1000) + (usTicks * 1000 - cycle_cnt) / usTicks;
+#else
+    do {
+        ms = sysTickUptime;
+        cycle_cnt = TIM6->CNT;
+    } while (ms != sysTickUptime || cycle_cnt < sysTickValStamp);
+
+    return (ms * 1000) + cycle_cnt / usTicks;
+#endif
 }
 
 // Return system uptime in milliseconds (rollover in 49 days)
