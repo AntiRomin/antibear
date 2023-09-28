@@ -20,7 +20,7 @@ static void prvDebugTask( void * pvParameters )
         {
             isRunOnlyOneTimes = true;
         }
-        printf("Timebase Tick ms:%ld, us:%ld\n", millis(), micros());
+        printf("Timebase Tick ms:%lu, us:%lu\n", millis(), micros());
         vTaskDelay(1);
     }
 }
