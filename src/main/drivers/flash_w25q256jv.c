@@ -7,9 +7,13 @@
 #include "common/utils.h"
 
 #include "drivers/time.h"
-#include "drivers/system.h"
+#include "drivers/flash.h"
+#include "drivers/flash_impl.h"
 #include "drivers/flash_w25q256jv.h"
-#include "drivers/stm32/bus_quadspi.h"
+#include "drivers/bus_quadspi.h"
+
+#define USE_FLASH_WRITES_USING_4LINES
+#define USE_FLASH_READS_USING_4LINES
 
 // JEDEC ID
 #define JEDEC_ID_WINBOND_W25Q256JV              0xEF4019
@@ -109,6 +113,7 @@
 // Values from W25Q256JV Datasheet.
 #define W25Q256JV_TIMEOUT_PAGE_READ_MS          1           // No minimum specified in datasheet
 #define W25Q256JV_TIMEOUT_RESET_MS              1           // tRST = 30us
+#define W25Q256JV_TIMEOUT_SECTOR_ERASE_MS       400         // tBE2max = 400ms, tBE2typ = 50ms
 #define W25Q256JV_TIMEOUT_BLOCK_ERASE_64KB_MS   2000        // tBE2max = 2000ms, tBE2typ = 150ms
 #define W25Q256JV_TIMEOUT_CHIP_ERASE_MS        (400 * 1000) // tCEmax 400s, tCEtyp = 80s
 
@@ -116,15 +121,19 @@
 #define W25Q256JV_TIMEOUT_STATUS_REG_WRITE_MS   15          // tPPmax = 15ms, tPPtyp = 10ms
 #define W25Q256JV_TIMEOUT_WRITE_ENABLE_MS       1
 
-uint32_t timeoutAt = 0;
+typedef struct w25q256jvState_s {
+    uint32_t currentWriteAddress;
+} w25q256jvState_t;
 
-static bool w25q256jv_waitForReady(void);
-static void w25q256jv_waitForTimeout(void);
+w25q256jvState_t w25q256jvState = { 0 };
 
-static void w25q256jv_setTimeout(timeMs_t timeoutMillis)
+static bool w25q256jv_waitForReady(flashDevice_t *fdevice);
+static void w25q256jv_waitForTimeout(flashDevice_t *fdevice);
+
+static void w25q256jv_setTimeout(flashDevice_t *fdevice, timeMs_t timeoutMillis)
 {
     timeMs_t nowMs = microsISR() / 1000;
-    timeoutAt = nowMs + timeoutMillis;
+    fdevice->timeoutAt = nowMs + timeoutMillis;
 }
 
 static void w25q256jv_performOneByteCommand(uint8_t command)
@@ -137,8 +146,9 @@ static void w25q256jv_performCommandWithAddress(uint8_t command, uint32_t addres
     quadSpiInstructionWithAddress1LINE(command, 0, address, W25Q256JV_ADDRESS_BITS);
 }
 
-static void w25q256jv_writeEnable(void)
+static void w25q256jv_writeEnable(flashDevice_t *fdevice)
 {
+    UNUSED(fdevice);
     w25q256jv_performOneByteCommand(W25Q256JV_INSTRUCTION_WRITE_ENABLE);
 }
 
@@ -160,28 +170,29 @@ static void w25q256jv_writeRegister(uint8_t command, uint16_t data)
     quadSpiTransmit1LINE(command, 0, (uint8_t *)&data, W25Q256JV_STATUS_REGISTER_BITS / 8);
 }
 
-static void w25q256jv_deviceReset(void)
+static void w25q256jv_deviceReset(flashDevice_t *fdevice)
 {
-    w25q256jv_waitForReady();
+    w25q256jv_waitForReady(fdevice);
     w25q256jv_performOneByteCommand(W25Q256JV_INSTRUCTION_ENABLE_RESET);
     w25q256jv_performOneByteCommand(W25Q256JV_INSTRUCTION_RESET_DEVICE);
 
-    w25q256jv_setTimeout(W25Q256JV_TIMEOUT_RESET_MS);
-    w25q256jv_waitForTimeout();
+    w25q256jv_setTimeout(fdevice, W25Q256JV_TIMEOUT_RESET_MS);
+    w25q256jv_waitForTimeout(fdevice);
 
-    w25q256jv_waitForReady();
+    w25q256jv_waitForReady(fdevice);
 
     uint16_t registerValue;
 
     registerValue = w25q256jv_readRegister(W25Q256JV_INSTRUCTION_READ_STATUS1_REG);
 
 #if !defined(USE_QSPI_DUALFLASH)
-    if ((((uint8_t *)&registerValue)[0] & W25Q256JV_SR1_BITS_BLOCK_PROTECT) != 0) {
+    if ((((uint8_t *)&registerValue)[0] & W25Q256JV_SR1_BITS_BLOCK_PROTECT) != 0)
 #else
     if ((((uint8_t *)&registerValue)[0] & W25Q256JV_SR1_BITS_BLOCK_PROTECT) != 0 ||
-        (((uint8_t *)&registerValue)[1] & W25Q256JV_SR1_BITS_BLOCK_PROTECT) != 0) {
+        (((uint8_t *)&registerValue)[1] & W25Q256JV_SR1_BITS_BLOCK_PROTECT) != 0)
 #endif
-        // Enable QUADSPI mode.
+    {
+        // Disable block protect.
         registerValue = w25q256jv_readRegister(W25Q256JV_INSTRUCTION_READ_STATUS1_REG);
 
         uint16_t newValue = registerValue;
@@ -192,22 +203,23 @@ static void w25q256jv_deviceReset(void)
         ((uint8_t *)&newValue)[1] &= ~W25Q256JV_SR1_BITS_BLOCK_PROTECT;
 #endif
 
-        w25q256jv_performOneByteCommand(W25Q256JV_INSTRUCTION_WRITE_ENABLE);
-        // w25q256jv_performOneByteCommand(W25Q256JV_INSTRUCTION_VOLATILE_WRITE_ENABLE);
+        // w25q256jv_performOneByteCommand(W25Q256JV_INSTRUCTION_WRITE_ENABLE);
+        w25q256jv_performOneByteCommand(W25Q256JV_INSTRUCTION_VOLATILE_WRITE_ENABLE);
         w25q256jv_writeRegister(W25Q256JV_INSTRUCTION_WRITE_STATUS1_REG, newValue);
 
-        w25q256jv_setTimeout(W25Q256JV_TIMEOUT_STATUS_REG_WRITE_MS);
-        w25q256jv_waitForTimeout();
+        w25q256jv_setTimeout(fdevice, W25Q256JV_TIMEOUT_STATUS_REG_WRITE_MS);
+        w25q256jv_waitForTimeout(fdevice);
     }
 
     registerValue = w25q256jv_readRegister(W25Q256JV_INSTRUCTION_READ_STATUS2_REG);
 
 #if !defined(USE_QSPI_DUALFLASH)
-    if ((((uint8_t *)&registerValue)[0] & W25Q256JV_SR2_BIT_QUAD_ENABLE) == 0) {
+    if ((((uint8_t *)&registerValue)[0] & W25Q256JV_SR2_BIT_QUAD_ENABLE) == 0)
 #else
     if ((((uint8_t *)&registerValue)[0] & W25Q256JV_SR2_BIT_QUAD_ENABLE) == 0 ||
-        (((uint8_t *)&registerValue)[1] & W25Q256JV_SR2_BIT_QUAD_ENABLE) == 0) {
+        (((uint8_t *)&registerValue)[1] & W25Q256JV_SR2_BIT_QUAD_ENABLE) == 0)
 #endif
+    {
         // Enable QUADSPI mode.
         registerValue = w25q256jv_readRegister(W25Q256JV_INSTRUCTION_READ_STATUS2_REG);
 
@@ -219,23 +231,24 @@ static void w25q256jv_deviceReset(void)
         ((uint8_t *)&newValue)[1] |= W25Q256JV_SR2_BIT_QUAD_ENABLE;
 #endif
 
-        w25q256jv_performOneByteCommand(W25Q256JV_INSTRUCTION_WRITE_ENABLE);
-        // w25q256jv_performOneByteCommand(W25Q256JV_INSTRUCTION_VOLATILE_WRITE_ENABLE);
+        // w25q256jv_performOneByteCommand(W25Q256JV_INSTRUCTION_WRITE_ENABLE);
+        w25q256jv_performOneByteCommand(W25Q256JV_INSTRUCTION_VOLATILE_WRITE_ENABLE);
         w25q256jv_writeRegister(W25Q256JV_INSTRUCTION_WRITE_STATUS2_REG, newValue);
 
-        w25q256jv_setTimeout(W25Q256JV_TIMEOUT_STATUS_REG_WRITE_MS);
-        w25q256jv_waitForTimeout();
+        w25q256jv_setTimeout(fdevice, W25Q256JV_TIMEOUT_STATUS_REG_WRITE_MS);
+        w25q256jv_waitForTimeout(fdevice);
     }
 
     registerValue = w25q256jv_readRegister(W25Q256JV_INSTRUCTION_READ_STATUS3_REG);
 
 #if !defined(USE_QSPI_DUALFLASH)
-    if ((((uint8_t *)&registerValue)[0] & W25Q256JV_SR3_BIT_4B_ADDRESS_ENABLE) == 0 ) {
+    if ((((uint8_t *)&registerValue)[0] & W25Q256JV_SR3_BIT_4B_ADDRESS_ENABLE) == 0 )
 #else
     if ((((uint8_t *)&registerValue)[0] & W25Q256JV_SR3_BIT_4B_ADDRESS_ENABLE) == 0 ||
-        (((uint8_t *)&registerValue)[1] & W25Q256JV_SR3_BIT_4B_ADDRESS_ENABLE) == 0) {
+        (((uint8_t *)&registerValue)[1] & W25Q256JV_SR3_BIT_4B_ADDRESS_ENABLE) == 0)
 #endif
-        // Enable QUADSPI mode.
+    {
+        // Enable 4 bytes address mode.
         registerValue = w25q256jv_readRegister(W25Q256JV_INSTRUCTION_READ_STATUS3_REG);
 
         uint16_t newValue = registerValue;
@@ -246,17 +259,18 @@ static void w25q256jv_deviceReset(void)
         ((uint8_t *)&newValue)[1] |= W25Q256JV_SR3_BIT_4B_ADDRESS_ENABLE;
 #endif
 
-        w25q256jv_performOneByteCommand(W25Q256JV_INSTRUCTION_WRITE_ENABLE);
-        // w25q256jv_performOneByteCommand(W25Q256JV_INSTRUCTION_VOLATILE_WRITE_ENABLE);
+        // w25q256jv_performOneByteCommand(W25Q256JV_INSTRUCTION_WRITE_ENABLE);
+        w25q256jv_performOneByteCommand(W25Q256JV_INSTRUCTION_VOLATILE_WRITE_ENABLE);
         w25q256jv_writeRegister(W25Q256JV_INSTRUCTION_WRITE_STATUS3_REG, newValue);
 
-        w25q256jv_setTimeout(W25Q256JV_TIMEOUT_STATUS_REG_WRITE_MS);
-        w25q256jv_waitForTimeout();
+        w25q256jv_setTimeout(fdevice, W25Q256JV_TIMEOUT_STATUS_REG_WRITE_MS);
+        w25q256jv_waitForTimeout(fdevice);
     }
 }
 
-bool w25q256jv_isReady(void)
+bool w25q256jv_isReady(flashDevice_t *fdevice)
 {
+    UNUSED(fdevice);
     uint16_t status = w25q256jv_readRegister(W25Q256JV_INSTRUCTION_READ_STATUS1_REG);
 
 #if !defined(USE_QSPI_DUALFLASH)
@@ -269,8 +283,9 @@ bool w25q256jv_isReady(void)
     return !busy;
 }
 
-static bool w25q256jv_isWritable(void)
+static bool w25q256jv_isWritable(flashDevice_t *fdevice)
 {
+    UNUSED(fdevice);
     uint16_t status = w25q256jv_readRegister(W25Q256JV_INSTRUCTION_READ_STATUS1_REG);
 
 #if !defined(USE_QSPI_DUALFLASH)
@@ -283,37 +298,41 @@ static bool w25q256jv_isWritable(void)
     return writable;
 }
 
-static bool w25q256jv_hasTimedOut(void)
+static bool w25q256jv_hasTimedOut(flashDevice_t *fdevice)
 {
     uint32_t nowMs = microsISR() / 1000;
-    if (cmp32(nowMs, timeoutAt) >= 0) {
+    if (cmp32(nowMs, fdevice->timeoutAt) >= 0) {
         return true;
     }
     return false;
 }
 
-static void w25q256jv_waitForTimeout(void)
+static void w25q256jv_waitForTimeout(flashDevice_t *fdevice)
 {
-   while (!w25q256jv_hasTimedOut()) { }
+   while (!w25q256jv_hasTimedOut(fdevice)) { }
 
-   timeoutAt = 0;
+   fdevice->timeoutAt = 0;
 }
 
-static bool w25q256jv_waitForReady(void)
+static bool w25q256jv_waitForReady(flashDevice_t *fdevice)
 {
     bool ready = true;
-    while (!w25q256jv_isReady()) {
-        if (w25q256jv_hasTimedOut()) {
+    while (!w25q256jv_isReady(fdevice)) {
+        if (w25q256jv_hasTimedOut(fdevice)) {
             ready = false;
             break;
         }
     }
-    timeoutAt = 0;
+    fdevice->timeoutAt = 0;
 
     return ready;
 }
 
-static bool w25q256jv_identify(void)
+const flashVTable_t w25q256jv_vTable;
+
+static void w25q256jv_deviceInit(flashDevice_t *fdevice);
+
+static bool w25q256jv_identify(flashDevice_t *fdevice)
 {
     bool isDetected = false;
 
@@ -322,128 +341,164 @@ static bool w25q256jv_identify(void)
     quadSpiReceive1LINE(W25Q256JV_INSTRUCTION_READ_JEDEC_ID, 0, in, W25Q256JV_JEDEC_ID_LENGTH / 8);
 
 #if !defined(USE_QSPI_DUALFLASH)
-    if ((in[0] << 16 | in[1] << 8 | in[2]) == JEDEC_ID_WINBOND_W25Q256JV) {
+    if ((in[0] << 16 | in[1] << 8 | in[2]) == JEDEC_ID_WINBOND_W25Q256JV)
 #else
     if (((in[0] << 16 | in[2] << 8 | in[4]) == JEDEC_ID_WINBOND_W25Q256JV) &&
-        ((in[1] << 16 | in[3] << 8 | in[5]) == JEDEC_ID_WINBOND_W25Q256JV)) {
+        ((in[1] << 16 | in[3] << 8 | in[5]) == JEDEC_ID_WINBOND_W25Q256JV))
 #endif
+    {
+        fdevice->geometry.jedecId           = JEDEC_ID_WINBOND_W25Q256JV;
+
+#if !defined(USE_QSPI_DUALFLASH)
+        fdevice->geometry.sectors           = 8192;
+        fdevice->geometry.pagesPerSector    = 16;
+        fdevice->geometry.pageSize          = W25Q256JV_PAGE_BYTE_SIZE;
+        // = 268435456 256MBit 32MB
+#else
+        fdevice->geometry.sectors           = 8192;
+        fdevice->geometry.pagesPerSector    = 16 * 2;
+        fdevice->geometry.pageSize          = W25Q256JV_PAGE_BYTE_SIZE * 2;
+        // = (268435456 * 2) (256MBit * 2) 64MB
+#endif
+
+        fdevice->geometry.flashType         = FLASH_TYPE_NOR;
+        fdevice->geometry.sectorSize        = fdevice->geometry.pagesPerSector * fdevice->geometry.pageSize;
+        fdevice->geometry.totoalSize        = fdevice->geometry.sectorSize * fdevice->geometry.sectors;
+
+        fdevice->vTable                     = &w25q256jv_vTable;
+
         isDetected = true;
     }
 
     return isDetected;
 }
 
-void w25q256jv_eraseSector(uint32_t address)
+static void w25q256jv_configure(flashDevice_t *fdevice, uint32_t configurationFlags)
 {
-    w25q256jv_waitForReady();
-
-    w25q256jv_writeEnable();
-
-    // verify write enable is set
-    w25q256jv_setTimeout(W25Q256JV_TIMEOUT_WRITE_ENABLE_MS);
-    bool writable = false;
-    do {
-        writable = w25q256jv_isWritable();
-    } while (!writable && w25q256jv_hasTimedOut());
-
-    if (!writable) {
+    if (configurationFlags & FLASH_CF_SYSTEM_IS_MEMORY_MAPPED) {
         return;
     }
 
-    w25q256jv_waitForReady();
+    w25q256jv_deviceReset(fdevice);
 
-    w25q256jv_performCommandWithAddress(W25Q256JV_INSTRUCTION_BLOCK_ERASE_64KB_4B_ADDR, address);
-    
-    w25q256jv_setTimeout(W25Q256JV_TIMEOUT_BLOCK_ERASE_64KB_MS);
+    w25q256jv_deviceInit(fdevice);
 }
 
-void w25q256jv_eraseCompletely(void)
+static void w25q256jv_eraseSector(flashDevice_t *fdevice, uint32_t address)
 {
-    w25q256jv_waitForReady();
+    w25q256jv_waitForReady(fdevice);
 
-    w25q256jv_writeEnable();
+    w25q256jv_writeEnable(fdevice);
 
     // verify write enable is set
-    w25q256jv_setTimeout(W25Q256JV_TIMEOUT_WRITE_ENABLE_MS);
+    w25q256jv_setTimeout(fdevice, W25Q256JV_TIMEOUT_WRITE_ENABLE_MS);
     bool writable = false;
     do {
-        writable = w25q256jv_isWritable();
-    } while (!writable && w25q256jv_hasTimedOut());
+        writable = w25q256jv_isWritable(fdevice);
+    } while (!writable && w25q256jv_hasTimedOut(fdevice));
 
     if (!writable) {
         return;
     }
 
-    w25q256jv_waitForReady();
+    w25q256jv_waitForReady(fdevice);
+
+    w25q256jv_performCommandWithAddress(W25Q256JV_INSTRUCTION_SECTOR_ERASE_4B_ADDR, address);
+    
+    w25q256jv_setTimeout(fdevice, W25Q256JV_TIMEOUT_SECTOR_ERASE_MS);
+}
+
+void w25q256jv_eraseCompletely(flashDevice_t *fdevice)
+{
+    w25q256jv_waitForReady(fdevice);
+
+    w25q256jv_writeEnable(fdevice);
+
+    // verify write enable is set
+    w25q256jv_setTimeout(fdevice, W25Q256JV_TIMEOUT_WRITE_ENABLE_MS);
+    bool writable = false;
+    do {
+        writable = w25q256jv_isWritable(fdevice);
+    } while (!writable && w25q256jv_hasTimedOut(fdevice));
+
+    if (!writable) {
+        return;
+    }
+
+    w25q256jv_waitForReady(fdevice);
 
     w25q256jv_performOneByteCommand(W25Q256JV_INSTRUCTION_CHIP_ERASE);
 
-    w25q256jv_setTimeout(W25Q256JV_TIMEOUT_CHIP_ERASE_MS);
+    w25q256jv_setTimeout(fdevice, W25Q256JV_TIMEOUT_CHIP_ERASE_MS);
 }
 
-static int w25q256jv_pageProgram(uint32_t address, const uint8_t *data, uint32_t length)
+static void w25q256jv_loadProgramData(flashDevice_t *fdevice, const uint8_t *data, int length)
 {
-    w25q256jv_waitForReady();
+    w25q256jv_waitForReady(fdevice);
 
-    w25q256jv_writeEnable();
+    quadSpiTransmitWithAddress4LINES(W25Q256JV_INSTRUCTION_QUAD_PAGE_PROGRAM_4B_ADDR, 0, w25q256jvState.currentWriteAddress, W25Q256JV_ADDRESS_BITS, data, length);
 
-    // verify write enable is set
-    w25q256jv_setTimeout(W25Q256JV_TIMEOUT_WRITE_ENABLE_MS);
-    bool writable = false;
-    do {
-        writable = w25q256jv_isWritable();
-    } while (!writable && w25q256jv_hasTimedOut());
+    w25q256jv_setTimeout(fdevice, W25Q256JV_TIMEOUT_PAGE_PROGRAM_MS);
 
-    if (!writable) {
-        return 0;
-    }
-
-    w25q256jv_waitForReady();
-
-    quadSpiTransmitWithAddress4LINES(W25Q256JV_INSTRUCTION_QUAD_PAGE_PROGRAM_4B_ADDR, 0, address, W25Q256JV_ADDRESS_BITS, data, length);
-
-    w25q256jv_setTimeout(W25Q256JV_TIMEOUT_PAGE_PROGRAM_MS);
-
-    return length;
+    w25q256jvState.currentWriteAddress += length;
 }
 
-int w25q256jv_writeBytes(uint32_t address, const uint8_t *data, uint32_t length)
+static void w25q256jv_pageProgramBegin(flashDevice_t *fdevice, uint32_t address, void (*callback)(uint32_t length))
 {
-    uint32_t pageBegin, pageEnd;
-    uint32_t programLength = 0;
+    fdevice->callback = callback;
+    w25q256jvState.currentWriteAddress = address;
+}
 
-    pageBegin = address / W25Q256JV_PAGE_BYTE_SIZE;
-    pageEnd = (address + length) / W25Q256JV_PAGE_BYTE_SIZE;
+static uint32_t w25q256jv_pageProgramContinue(flashDevice_t *fdevice, uint8_t const **buffers, uint32_t *bufferSizes, uint32_t bufferCount)
+{
+    for (uint32_t i = 0; i < bufferCount; i++) {
+        w25q256jv_waitForReady(fdevice);
 
-    if (pageBegin == pageEnd) {
-        programLength = w25q256jv_pageProgram(address, data, length);
-    } else {
-        uint32_t firstPageProgramLength = (((pageBegin + 1) * W25Q256JV_PAGE_BYTE_SIZE) - address);
-        length -= firstPageProgramLength;
-        programLength += w25q256jv_pageProgram(address, data, firstPageProgramLength);
+        w25q256jv_writeEnable(fdevice);
 
-        data += firstPageProgramLength;
-        for (uint32_t page = pageBegin + 1; page <= (pageEnd - 1); page++) {
-            programLength += w25q256jv_pageProgram(page * W25Q256JV_PAGE_BYTE_SIZE, data, W25Q256JV_PAGE_BYTE_SIZE);
-            data += W25Q256JV_PAGE_BYTE_SIZE;
-            length -= W25Q256JV_PAGE_BYTE_SIZE;
+        // verify write enable is set
+        w25q256jv_setTimeout(fdevice, W25Q256JV_TIMEOUT_WRITE_ENABLE_MS);
+        bool writable = false;
+        do {
+            writable = w25q256jv_isWritable(fdevice);
+        } while (!writable && w25q256jv_hasTimedOut(fdevice));
+
+        if (!writable) {
+            return 0;
         }
 
-        programLength += w25q256jv_pageProgram(pageEnd * W25Q256JV_PAGE_BYTE_SIZE, data, length);
+        w25q256jv_loadProgramData(fdevice, buffers[i], bufferSizes[i]);
     }
 
-    return programLength;
+    return fdevice->callbackArg;
 }
 
-int w25q256jv_readBytes(uint32_t address, uint8_t *buffer, uint32_t length)
+static void w25q256jv_pageProgramFinish(flashDevice_t *fdevice)
 {
-    if (!w25q256jv_waitForReady()) {
+    UNUSED(fdevice);
+}
+
+static void w25q256jv_pageProgram(flashDevice_t *fdevice, uint32_t address, const uint8_t *data, uint32_t length, void (*callback)(uint32_t length))
+{
+    w25q256jv_pageProgramBegin(fdevice, address, callback);
+    w25q256jv_pageProgramContinue(fdevice, &data, &length, 1);
+    w25q256jv_pageProgramFinish(fdevice);
+}
+
+static void w25q256jv_flush(flashDevice_t *fdevice)
+{
+    UNUSED(fdevice);
+}
+
+static int w25q256jv_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *buffer, uint32_t length)
+{
+    if (!w25q256jv_waitForReady(fdevice)) {
         return 0;
     }
 
-    bool status = quadSpiReceiveWith4LINESAddressAndAlternate4LINES(W25Q256JV_INSTRUCTION_FAST_READ_QUAD_INOUT_4B_ADDR, 4, address, W25Q256JV_ADDRESS_BITS, 0xFF, 8, buffer, length);
+    bool status = quadSpiReceive4LINESWithAddressAndAlternate4LINES(W25Q256JV_INSTRUCTION_FAST_READ_QUAD_INOUT_4B_ADDR, 4, address, W25Q256JV_ADDRESS_BITS, 0xFF, 8, buffer, length);
 
-    w25q256jv_setTimeout(W25Q256JV_TIMEOUT_PAGE_READ_MS);
+    w25q256jv_setTimeout(fdevice, W25Q256JV_TIMEOUT_PAGE_READ_MS);
 
     if (!status) {
         return 0;
@@ -452,14 +507,32 @@ int w25q256jv_readBytes(uint32_t address, uint8_t *buffer, uint32_t length)
     return length;
 }
 
-static void w25q256jv_configure(void)
+const flashGeometry_t* w25q256jv_getGeometry(flashDevice_t *fdevice)
 {
-    w25q256jv_deviceReset();
+    return &fdevice->geometry;
 }
 
-void w25q256jv_init(void)
+const flashVTable_t w25q256jv_vTable = {
+    .configure = w25q256jv_configure,
+    .isReady = w25q256jv_isReady,
+    .waitForReady = w25q256jv_waitForReady,
+    .eraseSector = w25q256jv_eraseSector,
+    .eraseCompletely = w25q256jv_eraseCompletely,
+    .pageProgramBegin = w25q256jv_pageProgramBegin,
+    .pageProgramContinue = w25q256jv_pageProgramContinue,
+    .pageProgramFinish = w25q256jv_pageProgramFinish,
+    .pageProgram = w25q256jv_pageProgram,
+    .flush = w25q256jv_flush,
+    .readBytes = w25q256jv_readBytes,
+    .getGeometry = w25q256jv_getGeometry,
+};
+
+static void w25q256jv_deviceInit(flashDevice_t *fdevice)
 {
-    if (w25q256jv_identify()) {
-        w25q256jv_configure();
-    }
+    UNUSED(fdevice);
+}
+
+bool w25q256jv_init(flashDevice_t *fdevice)
+{
+    return w25q256jv_identify(fdevice);
 }

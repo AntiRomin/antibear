@@ -28,7 +28,8 @@
         "stdio.h": "c",
         "algorithm": "c",
         "common_post.h": "c",
-        "task.h": "c"
+        "task.h": "c",
+        "flash.h": "c"
     },
     "cortex-debug.variableUseNaturalFormat": true
 }

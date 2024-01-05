@@ -89,7 +89,6 @@ EXCLUDES        = \
                 stm32h7xx_hal_timebase_rtc_alarm_template.c \
                 stm32h7xx_hal_timebase_rtc_wakeup_template.c \
                 stm32h7xx_hal_timebase_tim_template.c \
-                stm32h7xx_hal_uart_ex.c \
                 stm32h7xx_hal_usart.c \
                 stm32h7xx_hal_usart_ex.c \
                 stm32h7xx_hal_wwdg.c \
@@ -172,10 +171,11 @@ endif
 DEVICE_FLAGS    += -DHSE_VALUE=$(HSE_VALUE) -DHSE_STARTUP_TIMEOUT=1000 -DSTM32
 
 MCU_COMMON_SRC = \
-            drivers/stm32/bus_quadspi.c \
+            drivers/stm32/bus_quadspi_hal.c \
+            drivers/stm32/debug.c \
             drivers/stm32/system_stm32h7xx.c \
             startup/system_stm32h7xx.c \
             startup/stm32h7xx_hal_timebase_tim.c
 
 DSP_LIB := $(ROOT)/lib/main/CMSIS/DSP
-DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -D__FPU_PRESENT=1 -DUNALIGNED_SUPPORT_DISABLE -DARM_MATH_CM7
+DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -DUNALIGNED_SUPPORT_DISABLE -DARM_MATH_CM7

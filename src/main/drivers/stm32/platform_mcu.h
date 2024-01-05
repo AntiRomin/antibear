@@ -11,9 +11,15 @@
 
 #define FAST_IRQ_HANDLER            FAST_CODE
 
+// DMA to/from any memory
 #define DMA_DATA_ZERO_INIT          __attribute__ ((section(".dmaram_bss"), aligned(32)))
 #define DMA_DATA                    __attribute__ ((section(".dmaram_data"), aligned(32)))
 #define STATIC_DMA_DATA_AUTO        static DMA_DATA
 
+// Data in RAM which is guaranteed to not be reset on hot reboot
+#define PERSISTENT                  __attribute__ ((section(".persistent_data"), aligned(4)))
+
 #define DMA_RAM                     __attribute__((section(".DMA_RAM"), aligned(32)))
 #define DMA_RW_AXI                  __attribute__((section(".DMA_RW_AXI"), aligned(32)))
+extern uint8_t _dmaram_start__;
+extern uint8_t _dmaram_end__;

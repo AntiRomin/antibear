@@ -225,6 +225,14 @@ SECTIONS
     _dmarwaxi_end__ = _edmarwaxi;
   } >RAM
 
+  .persistent_data (NOLOAD) :
+  {
+    __persistent_data_start__ = .;
+    *(.persistent_data)
+    . = ALIGN(4);
+    __persistent_data_end__ = .;
+  } >RAM
+
   /* used during startup to initialized sdram2_data */
   _ssdram2_idata = LOADADDR(.sdram2_data);
 
