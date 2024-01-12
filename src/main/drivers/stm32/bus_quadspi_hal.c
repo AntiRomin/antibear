@@ -3,15 +3,37 @@
 
 #include "platform.h"
 
-#include "drivers/stm32/bus_quadspi.h"
+#include "drivers/bus_quadspi.h"
 
-#define QUADSPI_DEFAULT_TIMEOUT 10
+/* Definition for QSPI Pins */
+#define QSPI_CLK_PIN                GPIO_PIN_2
+#define QSPI_CLK_GPIO_PORT          GPIOB
+#define QSPI_CS_PIN                 GPIO_PIN_6
+#define QSPI_CS_GPIO_PORT           GPIOG
+/* Bank 1 */
+#define QSPI_BK1_D0_PIN             GPIO_PIN_8
+#define QSPI_BK1_D0_GPIO_PORT       GPIOF
+#define QSPI_BK1_D1_PIN             GPIO_PIN_9
+#define QSPI_BK1_D1_GPIO_PORT       GPIOF
+#define QSPI_BK1_D2_PIN             GPIO_PIN_7
+#define QSPI_BK1_D2_GPIO_PORT       GPIOF
+#define QSPI_BK1_D3_PIN             GPIO_PIN_6
+#define QSPI_BK1_D3_GPIO_PORT       GPIOF
+/* Bank 2 */
+#define QSPI_BK2_D0_PIN             GPIO_PIN_2
+#define QSPI_BK2_D0_GPIO_PORT       GPIOH
+#define QSPI_BK2_D1_PIN             GPIO_PIN_3
+#define QSPI_BK2_D1_GPIO_PORT       GPIOH
+#define QSPI_BK2_D2_PIN             GPIO_PIN_9
+#define QSPI_BK2_D2_GPIO_PORT       GPIOG
+#define QSPI_BK2_D3_PIN             GPIO_PIN_14
+#define QSPI_BK2_D3_GPIO_PORT       GPIOG
 
-QSPI_HandleTypeDef hqspi;
+QSPI_HandleTypeDef hqspi = {0};
 
 void quadSpiInit(void)
 {
-    GPIO_InitTypeDef GPIO_InitStruct;
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
 
     /*##-1- Enable GPIO Clocks #################################################*/
     __HAL_RCC_GPIOB_CLK_ENABLE();
@@ -118,6 +140,19 @@ static uint32_t quadSpi_alternateSizeFromValue(uint8_t alternateSize)
     return quadSpi_alternateSizeMap[((alternateSize + 1) / 8) - 1]; // rounds to nearest QSPI_ADDRESS_* value that will hold the address.
 }
 
+/**
+ * Return true if the bus is currently in the middle of a transmission.
+*/
+bool quadSpiIsBusBusy(void)
+{
+    if (hqspi.State == HAL_QSPI_STATE_BUSY)
+        return true;
+    else
+        return false; 
+}
+
+#define QUADSPI_DEFAULT_TIMEOUT     10
+
 bool quadSpiTransmit1LINE(uint8_t instruction, uint8_t dummyCycles, const uint8_t *out, int length)
 {
     HAL_StatusTypeDef status;
@@ -175,7 +210,39 @@ bool quadSpiReceive1LINE(uint8_t instruction, uint8_t dummyCycles, uint8_t *in, 
     status = HAL_QSPI_Command(&hqspi, &cmd, QUADSPI_DEFAULT_TIMEOUT);
     bool timeout = (status != HAL_OK);
     if (!timeout) {
-        status = HAL_QSPI_Receive(&hqspi, (uint8_t *)in, QUADSPI_DEFAULT_TIMEOUT);
+        status = HAL_QSPI_Receive(&hqspi, in, QUADSPI_DEFAULT_TIMEOUT);
+        timeout = (status != HAL_OK);
+    }
+
+    if (timeout) {
+        return false;
+    }
+
+    return true;
+}
+
+bool quadSpiReceive4LINES(uint8_t instruction, uint8_t dummyCycles, uint8_t *in, int length)
+{
+    HAL_StatusTypeDef status;
+
+    QSPI_CommandTypeDef cmd;
+    cmd.InstructionMode   = QSPI_INSTRUCTION_4_LINES;
+    cmd.AddressMode       = QSPI_ADDRESS_NONE;
+    cmd.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE;
+    cmd.DataMode          = QSPI_DATA_4_LINES;
+    cmd.DummyCycles       = dummyCycles;
+    cmd.DdrMode           = QSPI_DDR_MODE_DISABLE;
+    cmd.DdrHoldHalfCycle  = QSPI_DDR_HHC_ANALOG_DELAY;
+    cmd.SIOOMode          = QSPI_SIOO_INST_EVERY_CMD;
+
+    cmd.Instruction       = instruction;
+    cmd.NbData            = length;
+
+    status = HAL_QSPI_Command(&hqspi, &cmd, QUADSPI_DEFAULT_TIMEOUT);
+    bool timeout = (status != HAL_OK);
+    if (!timeout) {
+        status = HAL_QSPI_Receive(&hqspi, in, QUADSPI_DEFAULT_TIMEOUT);
+
         timeout = (status != HAL_OK);
     }
 
@@ -252,7 +319,7 @@ bool quadSpiReceiveWithAddress4LINES(uint8_t instruction, uint8_t dummyCycles, u
     return true;
 }
 
-bool quadSpiReceiveWith4LINESAddress4LINES(uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, uint8_t *in, int length)
+bool quadSpiReceive4LINESWithAddress4LINES(uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, uint8_t *in, int length)
 {
     HAL_StatusTypeDef status;
 
@@ -285,7 +352,7 @@ bool quadSpiReceiveWith4LINESAddress4LINES(uint8_t instruction, uint8_t dummyCyc
     return true;
 }
 
-bool quadSpiReceiveWith4LINESAddressAndAlternate4LINES(uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, uint32_t alternate, uint8_t alternateSize, uint8_t *in, int length)
+bool quadSpiReceive4LINESWithAddressAndAlternate4LINES(uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, uint32_t alternate, uint8_t alternateSize, uint8_t *in, int length)
 {
     HAL_StatusTypeDef status;
 

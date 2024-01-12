@@ -67,8 +67,8 @@ __config_start = ORIGIN(FLASH_CONFIG);
 __config_end = ORIGIN(FLASH_CONFIG) + LENGTH(FLASH_CONFIG);
 
 /* Generate a link error if heap and stack don't fit into RAM */
-_Min_Heap_Size = 0;      /* required amount of heap  */
-_Min_Stack_Size = 0x800; /* required amount of stack */
+_Min_Heap_Size = 0x2000;  /* required amount of heap  */
+_Min_Stack_Size = 0x2000; /* required amount of stack */
 
 /* Define output sections */
 SECTIONS
@@ -247,6 +247,14 @@ SECTIONS
     PROVIDE(dmarwaxi_end = .);
     _edmarwaxi = .;
     _dmarwaxi_end__ = _edmarwaxi;
+  } >RAM
+
+  .persistent_data (NOLOAD) :
+  {
+    __persistent_data_start__ = .;
+    *(.persistent_data)
+    . = ALIGN(4);
+    __persistent_data_end__ = .;
   } >RAM
 
   /* used during startup to initialized sdram2_data */

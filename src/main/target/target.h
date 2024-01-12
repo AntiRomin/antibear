@@ -1,9 +1,10 @@
 #pragma once
 
-#define TARGET_BOARD_IDENTIFIER "embedfire_H743_Pro"
+#define USE_TIMEBASE_TIM
+#define FLASH_PAGE_SIZE             ((uint32_t)0x20000) // 128K sectors
 
-#define USBD_PRODUCT_STRING     "AntiBear"
+// DEBUG UART
+#define DEBUG_UART_BAUDRATE         912600
 
-#define FLASH_PAGE_SIZE ((uint32_t)0x20000) // 128K sectors
-
+// QSPI
 #define USE_QSPI_DUALFLASH

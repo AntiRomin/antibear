@@ -4,6 +4,7 @@
 #include "platform.h"
 
 #include "core/init.h"
+#include "FreeRTOS/FreeRTOSApp.h"
 
 void run(void);
 
@@ -18,7 +19,5 @@ int main(void)
 
 void FAST_CODE run(void)
 {
-    while (true) {
-        __NOP();
-    }
+    app_main();
 }

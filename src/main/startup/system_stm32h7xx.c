@@ -153,7 +153,7 @@ static void SystemInit_ExtMemCtl(void);
   *            PLL_M                          = 5
   *            PLL_N                          = 192
   *            PLL_P                          = 2
-  *            PLL_Q                          = 2
+  *            PLL_Q                          = 20
   *            PLL_R                          = 2
   *            VDD(V)                         = 3.3
   *            Flash Latency(WS)              = 4
@@ -177,7 +177,7 @@ static void SystemClockHSE_Config(void)
     RCC_OscInitStruct.PLL.PLLM = 5;
     RCC_OscInitStruct.PLL.PLLN = 192;
     RCC_OscInitStruct.PLL.PLLP = 2;
-    RCC_OscInitStruct.PLL.PLLQ = 2;
+    RCC_OscInitStruct.PLL.PLLQ = 20;
     RCC_OscInitStruct.PLL.PLLR = 2;
 
     RCC_OscInitStruct.PLL.PLLVCOSEL = RCC_PLL1VCOWIDE;
@@ -234,6 +234,52 @@ static void SystemClock_Config(void)
     while (!__HAL_PWR_GET_FLAG(PWR_FLAG_VOSRDY)) {}
 
     SystemClockHSE_Config();
+
+    // Enable SYSCFG clock mondatory for I/O Compensation Cell
+    __HAL_RCC_SYSCFG_CLK_ENABLE();
+
+    // Configure peripheral clocks
+
+    RCC_PeriphCLKInitTypeDef RCC_PeriphClkInit;
+
+    // Configure UART peripheral clock sources
+    //
+    // Possible sources:
+    //   D2PCLK1 (pclk1 for APB1 = USART234578)
+    //   D2PCLK2 (pclk2 for APB2 = USART16)
+    //   PLL2 (pll2_q_ck)
+    //   PLL3 (pll3_q_ck)
+    //   HSI (hsi_ck)
+    //   CSI (csi_ck)
+    //   LSE (lse_ck)
+
+    RCC_PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART16 | RCC_PERIPHCLK_USART234578;
+    RCC_PeriphClkInit.Usart16ClockSelection = RCC_USART16CLKSOURCE_D2PCLK2;
+    RCC_PeriphClkInit.Usart234578ClockSelection = RCC_USART234578CLKSOURCE_D2PCLK1;
+    HAL_RCCEx_PeriphCLKConfig(&RCC_PeriphClkInit);
+
+    // Configure QSPI peripheral clock sources
+    //
+    // Possible sources for QSPI:
+    //   D1HCLK (hclk for AHB1)
+    //   PLL1 (pll1_q_ck)
+    //   PLL2 (pll2_r_ck)
+    //   CLKP (per_ck)
+
+    RCC_PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_QSPI;
+    RCC_PeriphClkInit.QspiClockSelection = RCC_QSPICLKSOURCE_D1HCLK;
+    HAL_RCCEx_PeriphCLKConfig(&RCC_PeriphClkInit);
+
+    // Configure USB OTG peripheral clock sources
+    //
+    // Possible sources for USB OTG:
+    //   PLL1 (pll1_q_ck)
+    //   PLL3 (pll3_q_ck)
+    //   HSI48 (hsi48_ck)
+
+    RCC_PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USB;
+    RCC_PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_PLL;
+    HAL_RCCEx_PeriphCLKConfig(&RCC_PeriphClkInit);
 }
 
 void SystemInit (void)

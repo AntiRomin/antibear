@@ -53,4 +53,4 @@ dkms.conf
 
 # User Part
 obj/
-/.vscode/
+!*math.lib
