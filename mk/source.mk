@@ -65,4 +65,6 @@ SRC += $(FLASH_SRC) $(FREERTOS_SRC) $(COMMON_SRC)
 #excludes
 SRC   := $(filter-out $(MCU_EXCLUDES), $(SRC))
 
+SRC += $(USB_SRC)
+
 # end target specific make file checks

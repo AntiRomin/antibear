@@ -21,7 +21,7 @@ static void debugHardwareInit(void)
     __HAL_RCC_GPIOA_CLK_ENABLE();
 
     /*##-2- Configure peripheral GPIO ##########################################*/
-    /* UART1 TX GPIO pin configuration  */
+    /* UART1 TX GPIO pin configuration */
     GPIO_InitStruct.Pin       = DEBUG_TX_Pin;
     GPIO_InitStruct.Mode      = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Speed     = GPIO_SPEED_FREQ_HIGH;
@@ -29,7 +29,7 @@ static void debugHardwareInit(void)
     GPIO_InitStruct.Alternate = GPIO_AF7_USART1;
     HAL_GPIO_Init(DEBUG_TX_GPIO_Port, &GPIO_InitStruct);
 
-    /* UART1 RX GPIO pin configuration  */
+    /* UART1 RX GPIO pin configuration */
     GPIO_InitStruct.Pin       = DEBUG_RX_Pin;
     HAL_GPIO_Init(DEBUG_RX_GPIO_Port, &GPIO_InitStruct);
 

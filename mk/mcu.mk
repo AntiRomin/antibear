@@ -63,8 +63,6 @@ EXCLUDES        = \
                 stm32h7xx_hal_opamp_ex.c \
                 stm32h7xx_hal_ospi.c \
                 stm32h7xx_hal_otfdec.c \
-                stm32h7xx_hal_pcd.c \
-                stm32h7xx_hal_pcd_ex.c \
                 stm32h7xx_hal_pssi.c \
                 stm32h7xx_hal_ramecc.c \
                 stm32h7xx_hal_rng.c \
@@ -121,14 +119,37 @@ EXCLUDES        = \
                 stm32h7xx_ll_swpmi.c \
                 stm32h7xx_ll_tim.c \
                 stm32h7xx_ll_usart.c \
-                stm32h7xx_ll_usb.c \
                 stm32h7xx_ll_utils.c
 
 STDPERIPH_SRC   := $(filter-out ${EXCLUDES}, $(STDPERIPH_SRC))
 
-VPATH := $(VPATH):$(STDPERIPH_DIR)/src
+#USB
+USBCORE_DIR = $(ROOT)/lib/main/STM32H7/Middlewares/ST/STM32_USB_Device_library/Core
+USBCORE_SRC = $(notdir $(wildcard $(USBCORE_DIR)/Src/*.c))
+EXCLUDES    = usbd_conf_template.c \
+              usbd_desc_template.c
+USBCORE_SRC := $(filter-out ${EXCLUDES}, $(USBCORE_SRC))
 
-DEVICE_STDPERIPH_SRC := $(STDPERIPH_SRC)
+USBCDC_DIR = $(ROOT)/lib/main/STM32H7/Middlewares/ST/STM32_USB_Device_library/Class/CDC
+USBCDC_SRC = $(notdir $(wildcard $(USBCDC_DIR)/Src/*.c))
+EXCLUDES   = usbd_cdc_if_template.c
+USBCDC_SRC := $(filter-out ${EXCLUDES}, $(USBCDC_SRC))
+
+USBHID_DIR = $(ROOT)/lib/main/STM32H7/Middlewares/ST/STM32_USB_Device_library/Class/HID
+USBHID_SRC = $(notdir $(wildcard $(USBHID_DIR)/Src/*.c))
+
+USBMSC_DIR = $(ROOT)/lib/main/STM32H7/Middlewares/ST/STM32_USB_Device_library/Class/MSC
+USBMSC_SRC = $(notdir $(wildcard $(USBMSC_DIR)/Src/*.c))
+EXCLUDES   = usbd_msc_storage_template.c
+USBMSC_SRC := $(filter-out ${EXCLUDES}, $(USBMSC_SRC))
+
+VPATH := $(VPATH):$(USBCORE_DIR)/Src:$(USBCDC_DIR)/Src:$(USBHID_DIR)/Src:$(USBMSC_DIR)/Src:$(STDPERIPH_DIR)/src
+
+DEVICE_STDPERIPH_SRC := $(STDPERIPH_SRC) \
+                        $(USBCORE_SRC) \
+                        $(USBCDC_SRC) \
+                        $(USBHID_SRC) \
+                        $(USBMSC_SRC)
 
 #CMSIS
 VPATH           := $(VPATH):$(CMSIS_DIR)/Include:$(CMSIS_DIR)/Device/ST/STM32H7xx
@@ -136,9 +157,14 @@ VPATH           := $(VPATH):$(STDPERIPH_DIR)/Src
 CMSIS_SRC       :=
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(STDPERIPH_DIR)/Inc \
+                   $(USBCORE_DIR)/Inc \
+                   $(USBCDC_DIR)/Inc \
+                   $(USBHID_DIR)/Inc \
+                   $(USBMSC_DIR)/Inc \
                    $(CMSIS_DIR)/Core/Include \
                    $(ROOT)/lib/main/STM32H7/Drivers/CMSIS/Device/ST/STM32H7xx/Include \
-                   $(ROOT)/src/main/drivers/stm32
+                   $(ROOT)/src/main/drivers/stm32 \
+                   $(ROOT)/src/main/drivers/stm32/usb
 
 #Flags
 ARCH_FLAGS      = -mthumb -mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv5-sp-d16 -fsingle-precision-constant
@@ -169,6 +195,12 @@ DEVICE_FLAGS   += -DFIRMWARE_SIZE=$(FIRMWARE_SIZE)
 endif
 
 DEVICE_FLAGS    += -DHSE_VALUE=$(HSE_VALUE) -DHSE_STARTUP_TIMEOUT=1000 -DSTM32
+
+USB_SRC = \
+            drivers/stm32/usb/usbd_conf.c \
+            drivers/stm32/usb/usbd_desc.c \
+            drivers/stm32/usb/usbd_device.c \
+            drivers/stm32/usb/usbd_storage_if.c
 
 MCU_COMMON_SRC = \
             drivers/stm32/bus_quadspi_hal.c \

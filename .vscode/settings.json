@@ -29,7 +29,20 @@
         "algorithm": "c",
         "common_post.h": "c",
         "task.h": "c",
-        "flash.h": "c"
+        "flash.h": "c",
+        "usbd_msc.h": "c",
+        "usbd_msc_bot.h": "c",
+        "usbd_core.h": "c",
+        "usbd_conf.h": "c",
+        "stm32h7xx_hal_pcd.h": "c",
+        "stm32h7xx_ll_usb.h": "c",
+        "usbd_io.h": "c",
+        "usbd_def.h": "c",
+        "usbd_ioreq.h": "c",
+        "stdlib.h": "c",
+        "usbd_storage_if.h": "c",
+        "usbd_device.h": "c",
+        "usbd_desc.h": "c"
     },
     "cortex-debug.variableUseNaturalFormat": true
 }

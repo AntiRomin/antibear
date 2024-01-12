@@ -21,7 +21,9 @@
                 "${workspaceFolder}/lib/main/STM32H7/Drivers/CMSIS/Device/ST/STM32H7xx/Include",
                 "${workspaceFolder}/lib/main/STM32H7/Drivers/STM32H7xx_HAL_Driver/Inc",
                 "${workspaceFolder}/lib/main/STM32H7/Middlewares/ST/STM32_USB_Device_Library/Core/Inc",
+                "${workspaceFolder}/lib/main/STM32H7/Middlewares/ST/STM32_USB_Device_Library/Class/**",
                 "${workspaceFolder}/lib/main/STM32H7/Middlewares/ST/STM32_USB_Host_Library/Core/Inc",
+                "${workspaceFolder}/lib/main/STM32H7/Middlewares/ST/STM32_USB_Host_Library/Class/**",
                 "${workspaceFolder}/lib/main/FreeRTOS/Source",
                 "${workspaceFolder}/lib/main/FreeRTOS/Source/include",
                 "${workspaceFolder}/lib/main/FreeRTOS/Source/portable",
@@ -34,7 +36,7 @@
                 "${workspaceFolder}/src/main/core",
                 "${workspaceFolder}/src/main/FreeRTOS",
                 "${workspaceFolder}/src/main/drivers",
-                "${workspaceFolder}/src/main/drivers/stm32",
+                "${workspaceFolder}/src/main/drivers/stm32/**",
                 "${workspaceFolder}/src/main/startup",
                 "${workspaceFolder}/src/main/target"
             ],

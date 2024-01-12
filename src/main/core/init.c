@@ -15,6 +15,8 @@
 #include "drivers/system.h"
 #include "drivers/time.h"
 
+#include "drivers/stm32/usb/usbd_device.h"
+
 uint8_t systemState = SYSTEM_STATE_INITIALISING;
 
 void init(void)
@@ -26,6 +28,8 @@ void init(void)
     flashInit();
 
     debugInit();
+
+    usbStart();
 
     systemState |= SYSTEM_STATE_READY;
 }
