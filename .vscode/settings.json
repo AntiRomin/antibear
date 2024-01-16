@@ -42,7 +42,13 @@
         "stdlib.h": "c",
         "usbd_storage_if.h": "c",
         "usbd_device.h": "c",
-        "usbd_desc.h": "c"
+        "usbd_desc.h": "c",
+        "diskio.h": "c",
+        "ff.h": "c",
+        "ffconf.h": "c",
+        "mmc_qspi_flash.h": "c",
+        "stdint.h": "c",
+        "stddef.h": "c"
     },
     "cortex-debug.variableUseNaturalFormat": true
 }

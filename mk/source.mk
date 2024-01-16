@@ -17,7 +17,8 @@ FREERTOS_DIR = \
             $(ROOT)/lib/main/FreeRTOS/Source \
             $(ROOT)/lib/main/FreeRTOS/Source/include \
             $(ROOT)/lib/main/FreeRTOS/Source/portable/GCC/ARM_CM7/r0p1 \
-            $(ROOT)/lib/main/FreeRTOS/Source/portable/MemMang
+            $(ROOT)/lib/main/FreeRTOS/Source/portable/MemMang \
+            $(ROOT)/src/main/FreeRTOS
 
 FREERTOS_SRC = \
             $(notdir $(wildcard $(ROOT)/lib/main/FreeRTOS/Source/*.c)) \
@@ -31,9 +32,18 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(FREERTOS_DIR)
 VPATH           := $(VPATH):$(FREERTOS_DIR)
 
-FATFS_SRC += \
-            FatFs/diskio.c \
-            FatFs/diskio_quad_flash.c
+FATFS_DIR = \
+            $(ROOT)/lib/main/FatFS/source \
+            $(ROOT)/src/main/FatFS
+
+FATFS_SRC = \
+            $(notdir $(wildcard $(ROOT)/lib/main/FatFs/Source/*.c)) \
+            FatFs/mmc.c \
+            FatFs/mmc_qspi_flash.c
+
+EXCLUDES  = $(ROOT)/lib/main/FatFS/source/Templates/diskio.c
+
+FATFS_SRC := $(filter-out ${EXCLUDES}, $(FATFS_SRC))
 
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(FATFS_DIR)

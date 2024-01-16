@@ -41,9 +41,7 @@ BIN_DIR         := $(ROOT)/obj
 CMSIS_DIR       := $(ROOT)/lib/main/CMSIS
 INCLUDE_DIRS    := $(SRC_DIR) \
                    $(ROOT)/src/main/target \
-                   $(ROOT)/src/main/startup \
-                   $(ROOT)/src/main/FreeRTOS \
-                   $(ROOT)/src/main/FatFS
+                   $(ROOT)/src/main/startup
 LINKER_DIR      := $(ROOT)/src/link
 MAKE_SCRIPT_DIR := $(ROOT)/mk
 DEBUG_DIR		:= $(ROOT)/obj/debug
@@ -55,8 +53,6 @@ include $(MAKE_SCRIPT_DIR)/build_verbosity.mk
 
 # Search path for sources
 VPATH           := $(SRC_DIR):$(SRC_DIR)/startup
-FATFS_DIR        = $(ROOT)/lib/main/FatFS/source
-FATFS_SRC        = $(notdir $(wildcard $(FATFS_DIR)/*.c))
 CSOURCES        := $(shell find $(SRC_DIR) -name '*.c')
 
 VERSION_MAJOR := $(shell grep " VERSION_MAJOR" src/main/build/version.h | awk '{print $$3}' )
