@@ -356,7 +356,7 @@ static bool w25q256jv_identify(flashDevice_t *fdevice)
         // = 268435456 256MBit 32MB
 #else
         fdevice->geometry.sectors           = 8192;
-        fdevice->geometry.pagesPerSector    = 16 * 2;
+        fdevice->geometry.pagesPerSector    = 16;
         fdevice->geometry.pageSize          = W25Q256JV_PAGE_BYTE_SIZE * 2;
         // = (268435456 * 2) (256MBit * 2) 64MB
 #endif
