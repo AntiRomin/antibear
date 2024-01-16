@@ -159,3 +159,42 @@ DRESULT disk_ioctl (
         } break;
     }
 }
+
+/*---------------------------------------------------------*/
+/* User provided RTC function for FatFs module             */
+/*---------------------------------------------------------*/
+/* This is a real time clock service to be called back     */
+/* from FatFs module.                                      */
+
+typedef struct {
+    uint16_t    year;	/* 1970..2106 */
+    uint8_t     month;	/* 1..12 */
+    uint8_t     mday;	/* 1..31 */
+    uint8_t     hour;	/* 0..23 */
+    uint8_t     min;	/* 0..59 */
+    uint8_t     sec;	/* 0..59 */
+    uint8_t     wday;	/* 0..6 (Sun..Sat) */
+} RTCTIME;
+
+#if !FF_FS_NORTC && !FF_FS_READONLY
+DWORD get_fattime (void)
+{
+    RTCTIME rtc;
+
+    /* Get local time */
+    rtc.year = 2024;
+    rtc.month = 1;
+    rtc.mday = 1;
+    rtc.hour = 0;
+    rtc.min = 0;
+    rtc.sec = 0;
+
+    /* Pack date and time into a DWORD variable */
+    return    ((DWORD)(rtc.year - 1980) << 25)
+            | ((DWORD)rtc.month << 21)
+            | ((DWORD)rtc.mday << 16)
+            | ((DWORD)rtc.hour << 11)
+            | ((DWORD)rtc.min << 5)
+            | ((DWORD)rtc.sec >> 1);
+}
+#endif

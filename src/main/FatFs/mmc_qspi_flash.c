@@ -16,21 +16,24 @@ DRESULT qspi_flash_initialize(void)
 DRESULT qspi_flash_read(BYTE *buff, LBA_t sector, UINT count)
 {
     LBA_t baseAddress;
-    LBA_t lenght;
+    DWORD lenght;
+
+    const flashGeometry_t *flashGeometry = flashGetGeometry(FLASH_ID_W25Q256JV);
+    DWORD flashSectorSize = flashGeometry->sectorSize;
 
 #if defined(USE_QSPI_DUALFLASH)
     UINT isShift;
 
-    baseAddress = (sector >> 1) * flashGetGeometry(FLASH_ID_W25Q256JV)->sectorSize;
+    baseAddress = (sector / 2) * flashSectorSize;
     isShift = sector % 2;
     if (isShift) {
-        baseAddress += flashGetGeometry(FLASH_ID_W25Q256JV)->sectorSize >> 1;
+        baseAddress += flashSectorSize / 2;
     }
 
-    lenght = count * (flashGetGeometry(FLASH_ID_W25Q256JV)->sectorSize >> 1);
+    lenght = count * (flashSectorSize / 2);
 #else
-    baseAddress = sector * flashGetGeometry(FLASH_ID_W25Q256JV)->sectorSize;
-    lenght = count * flashGetGeometry(FLASH_ID_W25Q256JV)->sectorSize;
+    baseAddress = sector * flashSectorSize;
+    lenght = count * flashSectorSize;
 #endif
 
     flashReadBytes(FLASH_ID_W25Q256JV, baseAddress, buff, lenght);
@@ -40,27 +43,50 @@ DRESULT qspi_flash_read(BYTE *buff, LBA_t sector, UINT count)
 DRESULT qspi_flash_write(const BYTE *buff, LBA_t sector, UINT count)
 {
     LBA_t baseAddress;
-    LBA_t lenght;
+    LBA_t flashAddress;
+    DWORD lenght;
+    DWORD buffIndexOffset;
+    DWORD offset;
+    DWORD bytesToWrite;
+
+    const flashGeometry_t *flashGeometry = flashGetGeometry(FLASH_ID_W25Q256JV);
+    DWORD flashSectorSize = flashGeometry->sectorSize;
+    DWORD flashPageSize = flashGeometry->pageSize;
+
+    buffIndexOffset = 0;
 
 #if defined(USE_QSPI_DUALFLASH)
     UINT isShift;
-    LBA_t buffIndexOffset;
     LBA_t lastAddress;
     unsigned char tmpbuff[8192];
 
-    buffIndexOffset = 0;
-    baseAddress = (sector >> 1) * flashGetGeometry(FLASH_ID_W25Q256JV)->sectorSize;
+    baseAddress = (sector / 2) * flashSectorSize;
 
     isShift = sector % 2;
     if (isShift) {
-        flashReadBytes(FLASH_ID_W25Q256JV, baseAddress, tmpbuff, flashGetGeometry(FLASH_ID_W25Q256JV)->sectorSize);
-        memcpy(&tmpbuff[4096], &buff[0], (flashGetGeometry(FLASH_ID_W25Q256JV)->sectorSize >> 1));
+        flashReadBytes(FLASH_ID_W25Q256JV, baseAddress, tmpbuff, flashSectorSize);
+        memcpy(&tmpbuff[4096], &buff[0], (flashSectorSize / 2));
 
         flashEraseSector(FLASH_ID_W25Q256JV, baseAddress);
-        flashPageProgram(FLASH_ID_W25Q256JV, baseAddress, tmpbuff, flashGetGeometry(FLASH_ID_W25Q256JV)->sectorSize, NULL);
 
-        baseAddress += flashGetGeometry(FLASH_ID_W25Q256JV)->sectorSize >> 1;
-        buffIndexOffset = (flashGetGeometry(FLASH_ID_W25Q256JV)->sectorSize >> 1);
+        offset = 0;
+        lenght = 8192;
+        do {
+            flashAddress = baseAddress + offset;
+
+            bytesToWrite = lenght;
+            if (bytesToWrite > flashPageSize) {
+                bytesToWrite = flashPageSize;
+            }
+
+            flashPageProgram(FLASH_ID_W25Q256JV, flashAddress, &tmpbuff[offset], bytesToWrite, NULL);
+
+            lenght -= bytesToWrite;
+            offset += bytesToWrite;
+        } while (lenght > 0);
+
+        baseAddress += (flashSectorSize / 2);
+        buffIndexOffset = (flashSectorSize / 2);
         count--;
     }
 
@@ -69,13 +95,28 @@ DRESULT qspi_flash_write(const BYTE *buff, LBA_t sector, UINT count)
 
     isShift = (sector + count) % 2; 
     if (isShift) {
-        lastAddress = ((sector + count) >> 1) * flashGetGeometry(FLASH_ID_W25Q256JV)->sectorSize;
+        lastAddress = ((sector + count) / 2) * flashSectorSize;
 
-        flashReadBytes(FLASH_ID_W25Q256JV, lastAddress, tmpbuff, flashGetGeometry(FLASH_ID_W25Q256JV)->sectorSize);
-        memcpy(&tmpbuff[0], &buff[lastAddress], (flashGetGeometry(FLASH_ID_W25Q256JV)->sectorSize >> 1));
+        flashReadBytes(FLASH_ID_W25Q256JV, lastAddress, tmpbuff, flashSectorSize);
+        memcpy(&tmpbuff[0], &buff[lastAddress - (baseAddress + buffIndexOffset)], (flashSectorSize / 2));
 
         flashEraseSector(FLASH_ID_W25Q256JV, lastAddress);
-        flashPageProgram(FLASH_ID_W25Q256JV, lastAddress, tmpbuff, flashGetGeometry(FLASH_ID_W25Q256JV)->sectorSize, NULL);
+
+        offset = 0;
+        lenght = 8192;
+        do {
+            flashAddress = lastAddress + offset;
+
+            bytesToWrite = lenght;
+            if (bytesToWrite > flashPageSize) {
+                bytesToWrite = flashPageSize;
+            }
+
+            flashPageProgram(FLASH_ID_W25Q256JV, flashAddress, &tmpbuff[offset], bytesToWrite, NULL);
+
+            lenght -= bytesToWrite;
+            offset += bytesToWrite;
+        } while (lenght > 0);
 
         count--;
     }
@@ -83,27 +124,45 @@ DRESULT qspi_flash_write(const BYTE *buff, LBA_t sector, UINT count)
     if (!count)
         return RES_OK;
 
-    lenght = count * (flashGetGeometry(FLASH_ID_W25Q256JV)->sectorSize >> 1);
+    lenght = count * (flashSectorSize / 2);
 
-    for (UINT index = 0; index < (count >> 1); index++) {
-        flashEraseSector(FLASH_ID_W25Q256JV, (sector + index) * flashGetGeometry(FLASH_ID_W25Q256JV)->sectorSize);
+    for (UINT index = 0; index < (count / 2); index++) {
+        flashEraseSector(FLASH_ID_W25Q256JV, (sector + index) * flashSectorSize);
     }
 #else
-    baseAddress = sector * flashGetGeometry(FLASH_ID_W25Q256JV)->sectorSize;
-    lenght = count * flashGetGeometry(FLASH_ID_W25Q256JV)->sectorSize;
+    baseAddress = sector * flashSectorSize;
+    lenght = count * flashSectorSize;
 
     for (UINT index = 0; index < count; index++) {
-        flashEraseSector(FLASH_ID_W25Q256JV, (sector + index) * flashGetGeometry(FLASH_ID_W25Q256JV)->sectorSize);
+        flashEraseSector(FLASH_ID_W25Q256JV, (sector + index) * flashSectorSize);
     }
 #endif
 
-    flashPageProgram(FLASH_ID_W25Q256JV, baseAddress, &buff[buffIndexOffset], lenght, NULL);
+    offset = 0;
+    do {
+        flashAddress = baseAddress + offset;
+
+        bytesToWrite = lenght;
+        if (bytesToWrite > flashPageSize) {
+            bytesToWrite = flashPageSize;
+        }
+
+        flashPageProgram(FLASH_ID_W25Q256JV, flashAddress, &buff[buffIndexOffset + offset], bytesToWrite, NULL);
+
+        lenght -= bytesToWrite;
+        offset += bytesToWrite;
+    } while (lenght > 0);
+
     return RES_OK;
 }
 
 DRESULT qspi_flash_ioctl(BYTE cmd, void *buff)
 {
     DRESULT res = RES_ERROR;
+
+    const flashGeometry_t *flashGeometry = flashGetGeometry(FLASH_ID_W25Q256JV);
+    DWORD flashSectors = flashGeometry->sectors;
+    DWORD flashSectorSize = flashGeometry->sectorSize;
 
     switch (cmd) {
         case CTRL_SYNC:
@@ -115,16 +174,16 @@ DRESULT qspi_flash_ioctl(BYTE cmd, void *buff)
 
         case GET_SECTOR_COUNT:
         {
-            *(LBA_t*)buff = flashGetGeometry(FLASH_ID_W25Q256JV)->sectors;
+            *(LBA_t*)buff = flashSectors;
             res = RES_OK;
         } break;
 
         case GET_SECTOR_SIZE:
         {
 #if defined(USE_QSPI_DUALFLASH)
-            *(LBA_t*)buff = flashGetGeometry(FLASH_ID_W25Q256JV)->sectorSize >> 1;
+            *(LBA_t*)buff = flashSectorSize / 2;
 #else
-            *(LBA_t*)buff = flashGetGeometry(FLASH_ID_W25Q256JV)->sectorSize;
+            *(LBA_t*)buff = flashSectorSize;
 #endif
             res = RES_OK;
         } break;

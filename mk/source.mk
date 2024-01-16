@@ -39,7 +39,8 @@ FATFS_DIR = \
 FATFS_SRC = \
             $(notdir $(wildcard $(ROOT)/lib/main/FatFs/Source/*.c)) \
             FatFs/mmc.c \
-            FatFs/mmc_qspi_flash.c
+            FatFs/mmc_qspi_flash.c \
+            FatFs/FatFs_app.c
 
 EXCLUDES  = $(ROOT)/lib/main/FatFS/source/Templates/diskio.c
 
