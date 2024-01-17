@@ -92,6 +92,12 @@ SDRAM:
 | PI9 | Y | AF FMC | SDRAM_FMC_D30 |
 | PI10 | Y | AF FMC | SDRAM_FMC_D31 |
 
+I2C_EEPROM:
+| Pin | Used | Mode | Detail |
+| - | - | - | - |
+| PB8 | Y | AF I2C | EEPROM_SCL |
+| PB9 | Y | AF I2C | EEPROM_SDA |
+
 Debug port:
 | Pin | Used | Mode | Detail |
 | - | - | - | - |
@@ -109,12 +115,6 @@ OSC32:
 | - | - | - | - |
 | PC14 | Y | OSC32 | OSC32_IN |
 | PC15 | Y | OSC32 | OSC32_OUT |
-
-I2C_EEPROM Unused:
-| Pin | Used | Mode | Detail |
-| - | - | - | - |
-| PB8 | Y | AF I2C | EEPROM_SCL |
-| PB9 | Y | AF I2C | EEPROM_SDA |
 
 NAND FLASH Unused:
 | Pin | Used | Mode | Detail |
