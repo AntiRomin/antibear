@@ -6,7 +6,6 @@
 #include "ff.h"
 #include "FatFs_app.h"
 
-BYTE Buff[4096] __attribute__((aligned(4)));
 typedef struct {
     FATFS FatFs;
     FILINFO Finfo;
@@ -35,8 +34,11 @@ typedef struct {
 
 FatFs_runtime_t FatFs_runtime;
 
+char Line[256];
+BYTE Buff[4096] __attribute__((aligned(4)));
+
 static const char *ft[] = {"", "FAT12", "FAT16", "FAT32", "exFAT"};
-static const char days[] = "Sun\0Mon\0Tue\0Wed\0Thu\0Fri\0Sat";
+// static const char days[] = "Sun\0Mon\0Tue\0Wed\0Thu\0Fri\0Sat";
 
 /*--------------------------------------------------------------------------*/
 /* Monitor                                                                  */
@@ -97,7 +99,12 @@ static void FatFs_appUpdateStatus(void)
     if (res) return;
 
 #endif
-    res = scan_files("0:", &FatFs_runtime.acc_dirs, &FatFs_runtime.acc_files, &FatFs_runtime.acc_size);
+
+    Line[0] = '0';
+    Line[1] = ':';
+    Line[2] = '\0';
+    char *ptr = Line;
+    res = scan_files(ptr, &FatFs_runtime.acc_dirs, &FatFs_runtime.acc_files, &FatFs_runtime.acc_size);
     if (res) return;
 
     FatFs_runtime.acc_total = (fs->n_fatent - 2) * (fs->csize / 2);
