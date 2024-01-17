@@ -83,8 +83,8 @@
 /*!< Uncomment the following line if you need to relocate your vector Table in
      Internal SRAM. */
 /* #define VECT_TAB_SRAM */
-#define VECT_TAB_OFFSET  0x00000000UL        /*!< Vector Table base offset field.
-                                      This value must be a multiple of 0x200. */
+#define VECT_TAB_OFFSET  0x00000000UL /*!< Vector Table base offset field.
+                                        This value must be a multiple of 0x200. */
 /******************************************************************************/
 
 /**
@@ -160,7 +160,7 @@ static void SystemInit_ExtMemCtl(void);
   * @param  None
   * @retval None
   */
-static void SystemClockHSE_Config (void)
+static void SystemClockHSE_Config(void)
 {
     RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
     RCC_OscInitTypeDef RCC_OscInitStruct = {0};
@@ -185,9 +185,13 @@ static void SystemClockHSE_Config (void)
     RCC_OscInitStruct.PLL.PLLFRACN = 0;
     status = HAL_RCC_OscConfig(&RCC_OscInitStruct);
     if (status != HAL_OK) {
+        // TODO: Handle error
         while(1);
     }
 
+    // Configure SCGU (System Clock Generation Unit)
+    // Select PLL as system clock source and configure bus clock dividers.
+    //
     // Clock type and divider member names do not have direct visual correspondence.
     // Here is how these correspond:
     //   RCC_CLOCKTYPE_SYSCLK           sys_ck
@@ -196,6 +200,7 @@ static void SystemClockHSE_Config (void)
     //   RCC_CLOCKTYPE_PCLK1            APB1 (rcc_pclk1)
     //   RCC_CLOCKTYPE_PCLK2            APB2 (rcc_pclk2)
     //   RCC_CLOCKTYPE_D3PCLK1          APB4 (rcc_pclk4)
+
     RCC_ClkInitStruct.ClockType = ( \
         RCC_CLOCKTYPE_SYSCLK | \
         RCC_CLOCKTYPE_HCLK | \
@@ -213,11 +218,12 @@ static void SystemClockHSE_Config (void)
     RCC_ClkInitStruct.APB4CLKDivider = RCC_APB4_DIV2;
     status = HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_4);
     if (status != HAL_OK) {
+        // TODO: Handle error
         while(1);
     }
 }
 
-static void SystemClock_Config (void)
+static void SystemClock_Config(void)
 {
     // Supply configuration update enable
     HAL_PWREx_ConfigSupply(PWR_LDO_SUPPLY);
@@ -225,7 +231,7 @@ static void SystemClock_Config (void)
     // Configure the main internal regulator output voltage
     __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE0);
 
-    while(!__HAL_PWR_GET_FLAG(PWR_FLAG_VOSRDY)) {}
+    while (!__HAL_PWR_GET_FLAG(PWR_FLAG_VOSRDY)) {}
 
     SystemClockHSE_Config();
 

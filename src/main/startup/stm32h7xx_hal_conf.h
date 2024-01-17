@@ -218,12 +218,12 @@
 #define ETH_TX_DESC_CNT         4  /* number of Ethernet Tx DMA descriptors */
 #define ETH_RX_DESC_CNT         4  /* number of Ethernet Rx DMA descriptors */
 
-#define ETH_MAC_ADDR0    ((uint8_t)0x02)
-#define ETH_MAC_ADDR1    ((uint8_t)0x00)
-#define ETH_MAC_ADDR2    ((uint8_t)0x00)
-#define ETH_MAC_ADDR3    ((uint8_t)0x00)
-#define ETH_MAC_ADDR4    ((uint8_t)0x00)
-#define ETH_MAC_ADDR5    ((uint8_t)0x00)
+#define ETH_MAC_ADDR0    ((uint32_t)0x02)
+#define ETH_MAC_ADDR1    ((uint32_t)0x00)
+#define ETH_MAC_ADDR2    ((uint32_t)0x00)
+#define ETH_MAC_ADDR3    ((uint32_t)0x00)
+#define ETH_MAC_ADDR4    ((uint32_t)0x00)
+#define ETH_MAC_ADDR5    ((uint32_t)0x00)
 
 /* ########################## Assert Selection ############################## */
 /**

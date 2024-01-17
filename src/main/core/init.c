@@ -17,6 +17,8 @@
 
 #include "drivers/stm32/usb/usbd_device.h"
 
+#include "FatFs/FatFs_app.h"
+
 uint8_t systemState = SYSTEM_STATE_INITIALISING;
 
 void init(void)
@@ -30,6 +32,8 @@ void init(void)
     debugInit();
 
     usbStart();
+
+    FatFs_appInit();
 
     systemState |= SYSTEM_STATE_READY;
 }
