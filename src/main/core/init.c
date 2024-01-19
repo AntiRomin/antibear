@@ -12,6 +12,7 @@
 
 #include "drivers/bus_quadspi.h"
 #include "drivers/flash.h"
+#include "drivers/rtc.h"
 #include "drivers/system.h"
 #include "drivers/time.h"
 
@@ -25,11 +26,13 @@ void init(void)
 {
     systemInit();
 
+    debugInit();
+
+    rtcInit();
+
     quadSpiInit();
 
     flashInit();
-
-    debugInit();
 
     usbStart();
 

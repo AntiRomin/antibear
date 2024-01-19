@@ -67,8 +67,6 @@ EXCLUDES        = \
                 stm32h7xx_hal_ramecc.c \
                 stm32h7xx_hal_rng.c \
                 stm32h7xx_hal_rng_ex.c \
-                stm32h7xx_hal_rtc.c \
-                stm32h7xx_hal_rtc_ex.c \
                 stm32h7xx_hal_sai.c \
                 stm32h7xx_hal_sai_ex.c \
                 stm32h7xx_hal_sd.c \
@@ -205,6 +203,7 @@ USB_SRC = \
 MCU_COMMON_SRC = \
             drivers/stm32/bus_quadspi_hal.c \
             drivers/stm32/debug.c \
+            drivers/stm32/rtc.c \
             drivers/stm32/system_stm32h7xx.c \
             startup/system_stm32h7xx.c \
             startup/stm32h7xx_hal_timebase_tim.c
