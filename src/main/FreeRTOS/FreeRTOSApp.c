@@ -5,6 +5,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
+#include "common/time.h"
 #include "drivers/time.h"
 
 #if defined(DEBUG)
@@ -20,8 +21,13 @@ static void prvDebugTask( void * pvParameters )
         {
             isRunOnlyOneTimes = true;
         }
-        printf("Timebase Tick ms:%lu, us:%lu\n", millis(), micros());
-        vTaskDelay(1);
+        // printf("Timebase Tick ms:%lu, us:%lu\n", millis(), micros());
+        char buf[30] = {0};
+        dateTime_t dateTime = {0};
+        rtcGetDateTime(&dateTime);
+        dateTimeFormatLocal(buf, &dateTime);
+        printf("UTC:%s\n", buf);
+        vTaskDelay(10);
     }
 }
 #endif

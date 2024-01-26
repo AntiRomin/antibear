@@ -223,6 +223,25 @@ static void SystemClockHSE_Config(void)
     }
 }
 
+static void SystemClockLSE_Config(void)
+{
+    // Configure LSE Drive Capability
+    HAL_PWR_EnableBkUpAccess();
+    __HAL_RCC_LSEDRIVE_CONFIG(RCC_LSEDRIVE_HIGH);
+
+    RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+    HAL_StatusTypeDef status = HAL_OK;
+
+    RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSE;
+    RCC_OscInitStruct.LSEState = RCC_LSE_ON;
+    RCC_OscInitStruct.LSIState = RCC_LSI_OFF;
+    status = HAL_RCC_OscConfig(&RCC_OscInitStruct);
+    if (status != HAL_OK) {
+        // TODO: Handle error
+        while(1);
+    }
+}
+
 static void SystemClock_Config(void)
 {
     // Supply configuration update enable
@@ -234,6 +253,7 @@ static void SystemClock_Config(void)
     while (!__HAL_PWR_GET_FLAG(PWR_FLAG_VOSRDY)) {}
 
     SystemClockHSE_Config();
+    SystemClockLSE_Config();
 
     // Enable SYSCFG clock mondatory for I/O Compensation Cell
     __HAL_RCC_SYSCFG_CLK_ENABLE();
@@ -279,6 +299,16 @@ static void SystemClock_Config(void)
 
     RCC_PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USB;
     RCC_PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_PLL;
+    HAL_RCCEx_PeriphCLKConfig(&RCC_PeriphClkInit);
+
+    // Configure RTC peripheral clock sources
+    //
+    // Possible sources for RTC:
+    //    LSE (lse_ck)
+    //    LSI (lsi_ck)
+    //    HSE (hse_divx_ck)
+    RCC_PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_RTC;
+    RCC_PeriphClkInit.RTCClockSelection = RCC_RTCCLKSOURCE_LSE;
     HAL_RCCEx_PeriphCLKConfig(&RCC_PeriphClkInit);
 }
 
