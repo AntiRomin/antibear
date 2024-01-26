@@ -45,13 +45,13 @@ static void rtcTimerInit(void)
     sTime.Seconds = RTC_DEFAULT_SECOND;
     sTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
     sTime.StoreOperation = RTC_STOREOPERATION_RESET;
-    HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BCD);
+    HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
 
     sDate.WeekDay = RTC_DEFAULT_WEEKDAY;
     sDate.Month = RTC_DEFAULT_MONTH;
     sDate.Date = RTC_DEFAULT_DATE;
     sDate.Year = RTC_DEFAULT_YEAR;
-    HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BCD);
+    HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
 
     rtcBkpWrite(RTC_BKP_ID_MAGICNUMBER, RTC_MAGICNUMBER);
 }
@@ -101,7 +101,7 @@ bool rtcGetRaw(dateTime_t *dt)
     dt->hours = sTime.Hours;
     dt->minutes = sTime.Minutes;
     dt->seconds = sTime.Seconds;
-    dt->millis = 1000 - ((uint32_t)((uint32_t)sTime.SubSeconds * 1000) / (uint32_t)RTC_SYNCHPREDIV);
+    dt->millis = ((uint32_t)RTC_SYNCHPREDIV - (uint32_t)sTime.SubSeconds) * 1000 / ((uint32_t)RTC_SYNCHPREDIV + 1);
 
     return true;
 }

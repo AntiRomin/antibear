@@ -21,6 +21,9 @@ typedef uint32_t timeUs_t;
 #define TIMEZONE_OFFSET_MINUTES_MIN -780    // -13 hours
 #define TIMEZONE_OFFSET_MINUTES_MAX 780     // +13 hours
 
+// Milliseconds since Jan 1 1970
+typedef int64_t rtcTime_t;
+
 typedef struct dateTime_s {
     // full year
     uint16_t year;
@@ -50,9 +53,6 @@ typedef struct dateTime_s {
 #define RTC_DEFAULT_DATE            1
 #define RTC_DEFAULT_YEAR            24  // (2024 - 2000)
 
-// Milliseconds since Jan 1 1970
-typedef int64_t rtcTime_t;
-
 rtcTime_t rtcTimeMake(int32_t secs, uint16_t millis);
 int32_t rtcTimeGetSeconds(rtcTime_t *t);
 uint16_t rtcTimeGetMillis(rtcTime_t *t);
@@ -67,7 +67,7 @@ void dateTimeUTCToLocal(dateTime_t *utcDateTime, dateTime_t *localDateTime);
 // dateTimeSplitFormatted splits a formatted date into its date
 // and time parts. Note that the string pointed by formatted will
 // be modified and will become invalid after calling this function.
-bool dateTimeSplitFormatted(char *formatted, char **date, char**time);
+bool dateTimeSplitFormatted(char *formatted, char **date, char **time);
 
 bool rtcHasTime(void);
 

@@ -32,7 +32,7 @@ static rtcTime_t dateTimeToRtcTime(dateTime_t *dt)
     unsigned int date = dt->date - 1;   // 0-30
     unsigned int month = dt->month - 1; // 0-11
     unsigned int year = dt->year - REFERENCE_YEAR; // 0-99
-    int32_t unixTime = (((year / 4 * (365 * 4 + 1) + dates[year % 4][month] + date) * 24 + hour) * 60 + minute) + second + EPOCH_2000_OFFSET;
+    int32_t unixTime = (((year / 4 * (365 * 4 + 1) + dates[year % 4][month] + date) * 24 + hour) * 60 + minute) * 60 + second + EPOCH_2000_OFFSET;
     return rtcTimeMake(unixTime, dt->millis);
 }
 
@@ -60,7 +60,7 @@ static void rtcTimeToDateTime(dateTime_t *dt, rtcTime_t t)
 
     unsigned int month;
     for (month = 11; month > 0; month--) {
-        if (unixTime > dates[year][month]) {
+        if (unixTime >= dates[year][month]) {
             break;
         }
     }
@@ -124,7 +124,7 @@ static bool dateTimeFormat(char *buf, dateTime_t *dateTime, int16_t offsetMinute
     }
 
     if (shortVersion) {
-        sprintf(buf, "%04u-%02u-%02u %02u-%02u-%02u",
+        sprintf(buf, "%04u-%02u-%02u %02u:%02u:%02u",
             dateTime->year, dateTime->month, dateTime->date,
             dateTime->hours, dateTime->minutes, dateTime->seconds);
     } else {
@@ -168,7 +168,7 @@ bool dateTimeFormatLocal(char *buf, dateTime_t *dt)
 
 bool dateTimeFormatLocalShort(char *buf, dateTime_t *dt)
 {
-    return dateTimeFormat(buf, dt, rtcGetTimezoneOffsetMinutes(), false);
+    return dateTimeFormat(buf, dt, rtcGetTimezoneOffsetMinutes(), true);
 }
 
 void dateTimeUTCToLocal(dateTime_t *utcDateTime, dateTime_t *localDateTime)
@@ -176,7 +176,7 @@ void dateTimeUTCToLocal(dateTime_t *utcDateTime, dateTime_t *localDateTime)
     dateTimeWithOffset(localDateTime, utcDateTime, rtcGetTimezoneOffsetMinutes());
 }
 
-bool dateTimeSplitFormatted(char *formatted, char **date, char**time)
+bool dateTimeSplitFormatted(char *formatted, char **date, char **time)
 {
     // Just look for the T and replace it with a zero
     // Keep in sync with dateTimeFormat()
