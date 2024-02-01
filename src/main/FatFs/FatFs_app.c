@@ -38,7 +38,6 @@ char Line[256];
 BYTE Buff[4096] __attribute__((aligned(4)));
 
 static const char *ft[] = {"", "FAT12", "FAT16", "FAT32", "exFAT"};
-// static const char days[] = "Sun\0Mon\0Tue\0Wed\0Thu\0Fri\0Sat";
 
 /*--------------------------------------------------------------------------*/
 /* Monitor                                                                  */

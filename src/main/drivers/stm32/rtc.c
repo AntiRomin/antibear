@@ -53,7 +53,10 @@ static void rtcTimerInit(void)
     sDate.Year = RTC_DEFAULT_YEAR;
     HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
 
+    timezone = RTC_DEFAULT_TIMEZONE;
+
     rtcBkpWrite(RTC_BKP_ID_MAGICNUMBER, RTC_MAGICNUMBER);
+    rtcBkpWrite(RTC_BKP_ID_TIMEZONE, RTC_DEFAULT_TIMEZONE);
 }
 
 void rtcInit(void)
@@ -62,7 +65,8 @@ void rtcInit(void)
 
     if (rtcBkpRead(RTC_BKP_ID_MAGICNUMBER) != RTC_MAGICNUMBER) {
         rtcTimerInit();
-        timezone = RTC_DEFAULT_TIMEZONE;
+    } else {
+        timezone = rtcBkpRead(RTC_BKP_ID_TIMEZONE);
     }
 }
 

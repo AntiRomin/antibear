@@ -50,7 +50,8 @@
         "stdint.h": "c",
         "stddef.h": "c",
         "fatfs_app.h": "c",
-        "maths.h": "c"
+        "maths.h": "c",
+        "limits": "c"
     },
     "cortex-debug.variableUseNaturalFormat": true
 }

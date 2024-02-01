@@ -3,7 +3,8 @@
 #include "common/time.h"
 
 typedef enum {
-    RTC_BKP_ID_MAGICNUMBER = RTC_BKP_DR0,
+    RTC_BKP_ID_MAGICNUMBER  = RTC_BKP_DR0,
+    RTC_BKP_ID_TIMEZONE     = RTC_BKP_DR1,
 } RTC_BKP_ID_e;
 
 void rtcInit(void);
