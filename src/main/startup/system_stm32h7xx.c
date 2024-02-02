@@ -290,6 +290,18 @@ static void SystemClock_Config(void)
     RCC_PeriphClkInit.QspiClockSelection = RCC_QSPICLKSOURCE_D1HCLK;
     HAL_RCCEx_PeriphCLKConfig(&RCC_PeriphClkInit);
 
+    // Configure I2C peripheral clock sources
+    //
+    // Possible sources:
+    //   D2PCLK1 (pclk1 for APB1 = I2C123)
+    //   PLL3 (pll3_r_ck)
+    //   HSI (hsi_ck)
+    //   CSI (csi_ck)
+
+    RCC_PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_I2C123;
+    RCC_PeriphClkInit.I2c123ClockSelection = RCC_I2C123CLKSOURCE_D2PCLK1;
+    HAL_RCCEx_PeriphCLKConfig(&RCC_PeriphClkInit);
+
     // Configure USB OTG peripheral clock sources
     //
     // Possible sources for USB OTG:

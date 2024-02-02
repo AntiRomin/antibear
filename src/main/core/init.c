@@ -10,6 +10,7 @@
 
 #include "core/init.h"
 
+#include "drivers/bus_i2c.h"
 #include "drivers/bus_quadspi.h"
 #include "drivers/flash.h"
 #include "drivers/rtc.h"
@@ -29,6 +30,8 @@ void init(void)
     debugInit();
 
     rtcInit();
+
+    i2cInit();
 
     quadSpiInit();
 

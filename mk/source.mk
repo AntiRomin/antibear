@@ -66,6 +66,7 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
 
 SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             core/init.c \
+            drivers/bus_i2c_timing \
             config/config_streamer.c \
 
 # check if target.mk supplied
