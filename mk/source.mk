@@ -10,6 +10,8 @@ COMMON_SRC = \
             core/init.c
 
 FLASH_SRC += \
+            drivers/eeprom.c \
+            drivers/eeprom_at24c02.c \
             drivers/flash.c \
             drivers/flash_w25q256jv.c
 
@@ -66,6 +68,7 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
 
 SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             core/init.c \
+            drivers/bus_i2c_timing \
             config/config_streamer.c \
 
 # check if target.mk supplied

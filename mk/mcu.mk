@@ -43,8 +43,6 @@ EXCLUDES        = \
                 stm32h7xx_hal_hcd.c \
                 stm32h7xx_hal_hrtim.c \
                 stm32h7xx_hal_hsem.c \
-                stm32h7xx_hal_i2c.c \
-                stm32h7xx_hal_i2c_ex.c \
                 stm32h7xx_hal_i2s.c \
                 stm32h7xx_hal_i2s_ex.c \
                 stm32h7xx_hal_irda.c \
@@ -201,7 +199,9 @@ USB_SRC = \
             drivers/stm32/usb/usbd_storage_if.c
 
 MCU_COMMON_SRC = \
+            drivers/bus_i2c_timing.c \
             drivers/stm32/bus_quadspi_hal.c \
+            drivers/stm32/bus_i2c_hal.c \
             drivers/stm32/debug.c \
             drivers/stm32/rtc.c \
             drivers/stm32/system_stm32h7xx.c \

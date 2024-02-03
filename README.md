@@ -22,7 +22,7 @@ Antibear is an arm-cortex M7 core MCU learning project. It used STM32H743XI as M
 5. Initialize QSPI DUAL FLASH (Finished)
 6. Initialize SDRAM at systemInit (Finished)
 7. Add RTC (Finished)
-8. Add I2C Bus driver for EEPROM
+8. Add I2C Bus driver for EEPROM (Finished)
 9. Add CLI
 
 ## Goal
