@@ -12,6 +12,7 @@
 
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_quadspi.h"
+#include "drivers/eeprom.h"
 #include "drivers/flash.h"
 #include "drivers/rtc.h"
 #include "drivers/system.h"
@@ -32,6 +33,8 @@ void init(void)
     rtcInit();
 
     i2cInit();
+
+    eepromInit();
 
     quadSpiInit();
 
