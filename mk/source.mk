@@ -6,6 +6,7 @@ COMMON_SRC = \
             $(addprefix pg/, $(notdir $(wildcard $(SRC_DIR)/pg/*.c))) \
             $(addprefix common/,$(notdir $(wildcard $(SRC_DIR)/common/*.c))) \
             $(addprefix config/,$(notdir $(wildcard $(SRC_DIR)/config/*.c))) \
+            cli/cli.c \
             drivers/system.c \
             core/init.c
 
@@ -67,6 +68,7 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             $(DEVICE_STDPERIPH_SRC) \
 
 SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
+            cli/cli.c \
             core/init.c \
             drivers/bus_i2c_timing \
             config/config_streamer.c \

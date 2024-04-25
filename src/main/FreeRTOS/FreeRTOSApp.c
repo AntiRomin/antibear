@@ -6,6 +6,7 @@
 #include "task.h"
 
 #include "common/time.h"
+#include "cli/cli.h"
 #include "drivers/time.h"
 
 #if defined(DEBUG)
@@ -26,11 +27,20 @@ static void prvDebugTask( void * pvParameters )
         dateTime_t dateTime = {0};
         rtcGetDateTime(&dateTime);
         dateTimeFormatLocal(buf, &dateTime);
-        printf("UTC:%s\n", buf);
+        // printf("UTC:%s\n", buf);
         vTaskDelay(10);
     }
 }
 #endif
+
+static void prvCliTask( void * pvParameters )
+{
+    for ( ;; )
+    {
+        cliProcess();
+        vTaskDelay(10);
+    }
+}
 
 void app_main(void)
 {
@@ -38,6 +48,9 @@ void app_main(void)
     printf("Initializing debug task\n");
     xTaskCreate ( prvDebugTask, "DEBUG", configMINIMAL_STACK_SIZE, NULL, 1, NULL);
 #endif
+
+    printf("Initializing cli task\n");
+    xTaskCreate ( prvCliTask, "CLI", configMINIMAL_STACK_SIZE, NULL, 1, NULL);
 
     printf("Initializing FreeRTOS task\n");
 

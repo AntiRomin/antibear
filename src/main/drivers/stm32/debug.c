@@ -79,6 +79,7 @@ FAST_IRQ_HANDLER void USART1_IRQHandler(void)
                 huart->Instance->TDR = (uint8_t)(txBuffer[txBufferTail]);
             }
             txBufferTail = (txBufferTail + 1) % txBufferSize;
+            SET_BIT(huart1.Instance->CR1, USART_CR1_TE);
         }
     }
 
